@@ -450,6 +450,8 @@ export default function RepositoryScanner({ user }) {
               </Card>
             </div>
           </div>
+            </TabsContent>
+          </Tabs>
         )}
       </div>
     </div>

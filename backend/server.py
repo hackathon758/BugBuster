@@ -390,7 +390,7 @@ Provide a secure, fixed version of this code along with explanations."""
 
         response = await chat.send_message(UserMessage(text=prompt))
         
-        response_text = response.get('message', '')
+        response_text = response if isinstance(response, str) else str(response)
         
         # Extract JSON from response
         if '```json' in response_text:

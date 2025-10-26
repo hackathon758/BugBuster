@@ -1315,6 +1315,450 @@ async def get_dashboard_overview(current_user: dict = Depends(get_current_user))
         'recent_scans': recent_scans
     }
 
+# ==================== ADVANCED ANALYSIS ROUTES ====================
+
+@api_router.post("/repositories/scan-github-advanced")
+async def scan_github_repository_advanced(request: GitHubRepoScanRequest, current_user: dict = Depends(get_current_user)):
+    """
+    Advanced scan of GitHub repository using AST, taint analysis, and cross-language detection
+    """
+    try:
+        from advanced_analysis import AdvancedVulnerabilityEngine
+        
+        # Parse GitHub URL
+        github_info = parse_github_url(request.github_url)
+        owner = github_info['owner']
+        repo_name = github_info['repo']
+        
+        # Create repository record
+        repo = Repository(
+            user_id=current_user['id'],
+            name=f"{owner}/{repo_name}",
+            description=f"GitHub repository (Advanced Scan): {request.github_url}",
+            language="multiple"
+        )
+        
+        repo_dict = repo.model_dump()
+        repo_dict['created_at'] = repo_dict['created_at'].isoformat()
+        repo_dict['github_url'] = request.github_url
+        await db.repositories.insert_one(repo_dict)
+        
+        # Fetch all files from GitHub
+        files = await fetch_github_repo_contents(owner, repo_name)
+        
+        if not files:
+            raise HTTPException(status_code=400, detail="No code files found in repository")
+        
+        # Create scan record
+        scan = Scan(
+            repository_id=repo.id,
+            user_id=current_user['id'],
+            status='processing',
+            total_files=len(files)
+        )
+        
+        scan_dict = scan.model_dump()
+        scan_dict['started_at'] = scan_dict['started_at'].isoformat()
+        await db.scans.insert_one(scan_dict)
+        
+        # Initialize advanced analysis engine
+        engine = AdvancedVulnerabilityEngine()
+        
+        # Perform advanced analysis
+        analysis_result = await engine.analyze_repository(files)
+        
+        if not analysis_result.get('success'):
+            raise HTTPException(
+                status_code=500,
+                detail=f"Advanced analysis failed: {analysis_result.get('error', 'Unknown error')}"
+            )
+        
+        # Store vulnerabilities from advanced analysis
+        all_vulnerabilities = []
+        for vuln_data in analysis_result.get('vulnerabilities', []):
+            vuln = Vulnerability(
+                scan_id=scan.id,
+                severity=vuln_data.get('severity', 'info'),
+                title=vuln_data.get('title', 'Unknown Vulnerability'),
+                description=vuln_data.get('description', ''),
+                file_path=vuln_data.get('file_path', ''),
+                line_number=vuln_data.get('line'),
+                code_snippet=vuln_data.get('code_snippet', vuln_data.get('matched_pattern', '')),
+                cwe_id=vuln_data.get('cwe_id'),
+                owasp_category=vuln_data.get('owasp_category'),
+                remediation=vuln_data.get('remediation')
+            )
+            
+            vuln_dict = vuln.model_dump()
+            vuln_dict['created_at'] = vuln_dict['created_at'].isoformat()
+            await db.vulnerabilities.insert_one(vuln_dict)
+            all_vulnerabilities.append(vuln)
+        
+        # Get severity counts and security score from analysis
+        severity_counts = analysis_result.get('severity_counts', {})
+        security_score = analysis_result.get('security_score', 0)
+        
+        # Update scan status
+        await db.scans.update_one(
+            {'id': scan.id},
+            {
+                '$set': {
+                    'status': 'completed',
+                    'completed_at': datetime.now(timezone.utc).isoformat(),
+                    'vulnerabilities_count': analysis_result.get('total_vulnerabilities', 0),
+                    'security_score': security_score,
+                    'scan_type': 'advanced'
+                }
+            }
+        )
+        
+        # Update repository
+        await db.repositories.update_one(
+            {'id': repo.id},
+            {
+                '$set': {
+                    'last_scan': datetime.now(timezone.utc).isoformat(),
+                    'security_score': security_score
+                }
+            }
+        )
+        
+        return {
+            'repository_id': repo.id,
+            'repository_name': repo.name,
+            'scan_id': scan.id,
+            'status': 'completed',
+            'scan_type': 'advanced',
+            'total_files': len(files),
+            'files_analyzed': analysis_result.get('files_analyzed', 0),
+            'total_vulnerabilities': analysis_result.get('total_vulnerabilities', 0),
+            'severity_counts': severity_counts,
+            'security_score': security_score,
+            'cross_language_vulnerabilities': analysis_result.get('cross_language_vulnerabilities', 0),
+            'algorithms_used': analysis_result.get('algorithms_used', []),
+            'analysis_summary': engine.get_analysis_summary(analysis_result)
+        }
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logging.error(f"Advanced GitHub scan error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to scan repository: {str(e)}")
+
+@api_router.post("/repositories/scan-github-advanced-ws")
+async def scan_github_repository_advanced_with_websocket(request: GitHubRepoScanRequest, current_user: dict = Depends(get_current_user)):
+    """
+    Advanced scan with WebSocket real-time updates
+    """
+    try:
+        from advanced_analysis import AdvancedVulnerabilityEngine
+        
+        session_id = str(uuid.uuid4())
+        
+        # Parse GitHub URL
+        github_info = parse_github_url(request.github_url)
+        owner = github_info['owner']
+        repo_name = github_info['repo']
+        
+        # Create repository record
+        repo = Repository(
+            user_id=current_user['id'],
+            name=f"{owner}/{repo_name}",
+            description=f"GitHub repository (Advanced Scan): {request.github_url}",
+            language="multiple"
+        )
+        
+        repo_dict = repo.model_dump()
+        repo_dict['created_at'] = repo_dict['created_at'].isoformat()
+        repo_dict['github_url'] = request.github_url
+        await db.repositories.insert_one(repo_dict)
+        
+        # Send initial status
+        await manager.send_message({
+            'status': 'started',
+            'message': 'Fetching repository contents...'
+        }, session_id)
+        
+        # Fetch all files from GitHub
+        files = await fetch_github_repo_contents(owner, repo_name)
+        
+        if not files:
+            await manager.send_message({
+                'status': 'error',
+                'message': 'No code files found in repository'
+            }, session_id)
+            raise HTTPException(status_code=400, detail="No code files found in repository")
+        
+        # Create scan record
+        scan = Scan(
+            repository_id=repo.id,
+            user_id=current_user['id'],
+            status='processing',
+            total_files=len(files)
+        )
+        
+        scan_dict = scan.model_dump()
+        scan_dict['started_at'] = scan_dict['started_at'].isoformat()
+        await db.scans.insert_one(scan_dict)
+        
+        # Start background task for advanced analysis
+        asyncio.create_task(
+            perform_advanced_scan_with_progress(
+                files, repo.id, scan.id, current_user['id'], session_id
+            )
+        )
+        
+        return {
+            'session_id': session_id,
+            'repository_id': repo.id,
+            'scan_id': scan.id,
+            'status': 'started',
+            'scan_type': 'advanced'
+        }
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logging.error(f"Advanced GitHub scan error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to start scan: {str(e)}")
+
+async def perform_advanced_scan_with_progress(
+    files: List[Dict],
+    repo_id: str,
+    scan_id: str,
+    user_id: str,
+    session_id: str
+):
+    """Background task for advanced scanning with progress updates"""
+    try:
+        from advanced_analysis import AdvancedVulnerabilityEngine
+        
+        engine = AdvancedVulnerabilityEngine()
+        total_files = len(files)
+        
+        # Send progress for each stage
+        await manager.send_message({
+            'status': 'processing',
+            'stage': 'initialization',
+            'message': f'Initializing advanced analysis for {total_files} files...',
+            'total_files': total_files,
+            'analyzed': 0
+        }, session_id)
+        
+        all_ir_data = []
+        all_vulnerabilities = []
+        files_processed = 0
+        
+        # Stage 1-4: Analyze each file
+        for idx, file_data in enumerate(files):
+            code = file_data.get('content', '')
+            language = file_data.get('language', 'unknown')
+            file_path = file_data.get('path', '')
+            
+            # Send progress update
+            await manager.send_message({
+                'status': 'processing',
+                'stage': 'ast_parsing',
+                'message': f'Analyzing {file_path}...',
+                'file_path': file_path,
+                'language': language,
+                'analyzed': idx + 1,
+                'total_files': total_files,
+                'progress': int((idx + 1) / total_files * 70)  # 70% for file analysis
+            }, session_id)
+            
+            file_result = await engine.analyze_file(code, language, file_path)
+            
+            if file_result.get('success'):
+                files_processed += 1
+                all_vulnerabilities.extend(file_result.get('vulnerabilities', []))
+                if 'ir_data' in file_result:
+                    all_ir_data.append(file_result['ir_data'])
+                
+                # Send vulnerability count for this file
+                file_vuln_count = len(file_result.get('vulnerabilities', []))
+                if file_vuln_count > 0:
+                    await manager.send_message({
+                        'status': 'processing',
+                        'stage': 'vulnerabilities_found',
+                        'file_path': file_path,
+                        'vulnerabilities_count': file_vuln_count
+                    }, session_id)
+        
+        # Stage 5: Cross-language analysis
+        await manager.send_message({
+            'status': 'processing',
+            'stage': 'cross_language_analysis',
+            'message': 'Performing cross-language security analysis...',
+            'progress': 75
+        }, session_id)
+        
+        cross_lang_vulns = []
+        if len(all_ir_data) > 1:
+            cross_lang_vulns = engine.cross_lang_detector.analyze(all_ir_data)
+            all_vulnerabilities.extend(cross_lang_vulns)
+        
+        # Store all vulnerabilities
+        await manager.send_message({
+            'status': 'processing',
+            'stage': 'storing_results',
+            'message': 'Storing vulnerability reports...',
+            'progress': 85
+        }, session_id)
+        
+        for vuln_data in all_vulnerabilities:
+            vuln = Vulnerability(
+                scan_id=scan_id,
+                severity=vuln_data.get('severity', 'info'),
+                title=vuln_data.get('title', 'Unknown Vulnerability'),
+                description=vuln_data.get('description', ''),
+                file_path=vuln_data.get('file_path', ''),
+                line_number=vuln_data.get('line'),
+                code_snippet=vuln_data.get('code_snippet', vuln_data.get('matched_pattern', '')),
+                cwe_id=vuln_data.get('cwe_id'),
+                owasp_category=vuln_data.get('owasp_category'),
+                remediation=vuln_data.get('remediation')
+            )
+            
+            vuln_dict = vuln.model_dump()
+            vuln_dict['created_at'] = vuln_dict['created_at'].isoformat()
+            await db.vulnerabilities.insert_one(vuln_dict)
+        
+        # Calculate final statistics
+        severity_counts = {'critical': 0, 'high': 0, 'medium': 0, 'low': 0, 'info': 0}
+        for vuln_data in all_vulnerabilities:
+            severity = vuln_data.get('severity', 'info').lower()
+            if severity in severity_counts:
+                severity_counts[severity] += 1
+        
+        # Calculate security score
+        weighted_score = (
+            severity_counts['critical'] * 25 +
+            severity_counts['high'] * 15 +
+            severity_counts['medium'] * 8 +
+            severity_counts['low'] * 3 +
+            severity_counts['info'] * 1
+        )
+        if total_files > 0:
+            weighted_score = weighted_score / total_files
+        security_score = max(0, int(100 - weighted_score))
+        
+        # Update scan status
+        await db.scans.update_one(
+            {'id': scan_id},
+            {
+                '$set': {
+                    'status': 'completed',
+                    'completed_at': datetime.now(timezone.utc).isoformat(),
+                    'vulnerabilities_count': len(all_vulnerabilities),
+                    'security_score': security_score,
+                    'scan_type': 'advanced'
+                }
+            }
+        )
+        
+        # Update repository
+        await db.repositories.update_one(
+            {'id': repo_id},
+            {
+                '$set': {
+                    'last_scan': datetime.now(timezone.utc).isoformat(),
+                    'security_score': security_score
+                }
+            }
+        )
+        
+        # Send completion message
+        await manager.send_message({
+            'status': 'completed',
+            'stage': 'finished',
+            'message': 'Advanced analysis complete!',
+            'progress': 100,
+            'repository_id': repo_id,
+            'scan_id': scan_id,
+            'total_files': total_files,
+            'files_analyzed': files_processed,
+            'total_vulnerabilities': len(all_vulnerabilities),
+            'severity_counts': severity_counts,
+            'security_score': security_score,
+            'cross_language_vulnerabilities': len(cross_lang_vulns),
+            'scan_type': 'advanced'
+        }, session_id)
+        
+    except Exception as e:
+        logging.error(f"Error in advanced scan: {str(e)}", exc_info=True)
+        await manager.send_message({
+            'status': 'error',
+            'message': f'Scan failed: {str(e)}'
+        }, session_id)
+
+# ==================== STATS ROUTES ====================
+
+@api_router.get("/stats/dashboard")
+async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
+    """
+    Get comprehensive dashboard statistics
+    """
+    try:
+        # Get basic counts
+        repos_count = await db.repositories.count_documents({'user_id': current_user['id']})
+        scans_count = await db.scans.count_documents({'user_id': current_user['id']})
+        
+        # Get user's scan IDs
+        user_scans = await db.scans.find({'user_id': current_user['id']}, {'id': 1, '_id': 0}).to_list(1000)
+        scan_ids = [s['id'] for s in user_scans]
+        
+        total_vulnerabilities = await db.vulnerabilities.count_documents({'scan_id': {'$in': scan_ids}})
+        
+        # Get severity breakdown
+        severity_pipeline = [
+            {'$match': {'scan_id': {'$in': scan_ids}}},
+            {'$group': {'_id': '$severity', 'count': {'$sum': 1}}}
+        ]
+        severity_breakdown = {'critical': 0, 'high': 0, 'medium': 0, 'low': 0, 'info': 0}
+        async for doc in db.vulnerabilities.aggregate(severity_pipeline):
+            severity_breakdown[doc['_id']] = doc['count']
+        
+        # Get scan type breakdown
+        scan_type_pipeline = [
+            {'$match': {'user_id': current_user['id']}},
+            {'$group': {'_id': '$scan_type', 'count': {'$sum': 1}}}
+        ]
+        scan_types = {'basic': 0, 'advanced': 0}
+        async for doc in db.scans.aggregate(scan_type_pipeline):
+            scan_type = doc['_id'] or 'basic'
+            scan_types[scan_type] = doc['count']
+        
+        # Calculate average security score
+        repos_with_scores = await db.repositories.find(
+            {'user_id': current_user['id'], 'security_score': {'$exists': True}},
+            {'security_score': 1, '_id': 0}
+        ).to_list(1000)
+        
+        avg_security_score = 0
+        if repos_with_scores:
+            avg_security_score = sum(r['security_score'] for r in repos_with_scores) / len(repos_with_scores)
+        
+        # Get recent activity
+        recent_scans = await db.scans.find(
+            {'user_id': current_user['id']},
+            {'_id': 0}
+        ).sort('started_at', -1).limit(5).to_list(5)
+        
+        return {
+            'repositories_count': repos_count,
+            'scans_count': scans_count,
+            'total_vulnerabilities': total_vulnerabilities,
+            'severity_breakdown': severity_breakdown,
+            'scan_types': scan_types,
+            'average_security_score': round(avg_security_score, 1),
+            'recent_scans': recent_scans
+        }
+        
+    except Exception as e:
+        logging.error(f"Dashboard stats error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch dashboard statistics")
+
 # ==================== TEST ROUTE ====================
 
 @api_router.get("/")

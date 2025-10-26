@@ -119,11 +119,11 @@ backend:
 
   - task: "AI-powered vulnerability fix generation"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
@@ -131,6 +131,9 @@ backend:
       - working: "NA"
         agent: "main"
         comment: "BUG FIX: Fixed UserMessage initialization error. Changed UserMessage(content=prompt) to UserMessage(text=prompt) at line 392. The emergentintegrations library expects 'text' parameter, not 'content'. Installed emergentintegrations library and restarted backend. Server now running successfully."
+      - working: true
+        agent: "testing"
+        comment: "✅ CRITICAL BUG FIXED: AI-powered vulnerability fix generation now working perfectly. Fixed two critical issues: 1) Added missing .with_model('gemini', 'gemini-2.0-flash') configuration to LlmChat initialization, 2) Fixed send_message() call by removing unsupported model/temperature parameters and making it async. Comprehensive testing performed: Successfully generated AI fixes for existing vulnerabilities with proper JSON response structure (fixed_code, explanation, improvements), endpoint correctly validates vulnerability ownership and existence, authentication properly enforced. Generated fixes are meaningful with substantial explanations (400+ chars) and multiple improvements listed."
 
   - task: "Download fixed code endpoint"
     implemented: true

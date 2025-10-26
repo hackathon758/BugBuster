@@ -263,6 +263,112 @@ export default function Repositories({ user }) {
                       <TrendingUp className="w-3 h-3" />
                       Created: {new Date(repo.created_at).toLocaleDateString()}
                     </div>
+
+                    {/* Vulnerabilities Section */}
+                    {repo.security_score !== null && repo.security_score !== undefined && (
+                      <div className="pt-3 border-t border-gray-200">
+                        <button
+                          onClick={() => toggleRepoVulnerabilities(repo.id)}
+                          className="w-full flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition-colors"
+                        >
+                          <div className="flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4 text-gray-600" />
+                            <span className="text-sm font-medium text-gray-700">Vulnerabilities</span>
+                          </div>
+                          {expandedRepos[repo.id] ? (
+                            <ChevronUp className="w-4 h-4 text-gray-500" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 text-gray-500" />
+                          )}
+                        </button>
+
+                        {expandedRepos[repo.id] && (
+                          <div className="mt-3 space-y-3">
+                            {loadingVulns[repo.id] ? (
+                              <div className="flex items-center justify-center py-4">
+                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                              </div>
+                            ) : repoVulnerabilities[repo.id] ? (
+                              <>
+                                {/* Severity Counts */}
+                                <div className="grid grid-cols-2 gap-2">
+                                  {repoVulnerabilities[repo.id].severity_counts.critical > 0 && (
+                                    <div className="flex items-center gap-1 text-xs">
+                                      <Badge className="bg-red-100 text-red-800 text-xs px-2 py-0.5">
+                                        Critical: {repoVulnerabilities[repo.id].severity_counts.critical}
+                                      </Badge>
+                                    </div>
+                                  )}
+                                  {repoVulnerabilities[repo.id].severity_counts.high > 0 && (
+                                    <div className="flex items-center gap-1 text-xs">
+                                      <Badge className="bg-orange-100 text-orange-800 text-xs px-2 py-0.5">
+                                        High: {repoVulnerabilities[repo.id].severity_counts.high}
+                                      </Badge>
+                                    </div>
+                                  )}
+                                  {repoVulnerabilities[repo.id].severity_counts.medium > 0 && (
+                                    <div className="flex items-center gap-1 text-xs">
+                                      <Badge className="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5">
+                                        Medium: {repoVulnerabilities[repo.id].severity_counts.medium}
+                                      </Badge>
+                                    </div>
+                                  )}
+                                  {repoVulnerabilities[repo.id].severity_counts.low > 0 && (
+                                    <div className="flex items-center gap-1 text-xs">
+                                      <Badge className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5">
+                                        Low: {repoVulnerabilities[repo.id].severity_counts.low}
+                                      </Badge>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Top Vulnerabilities */}
+                                {repoVulnerabilities[repo.id].vulnerabilities.length > 0 ? (
+                                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                                    <p className="text-xs font-semibold text-gray-700 mb-2">
+                                      Recent Issues ({repoVulnerabilities[repo.id].total_vulnerabilities} total):
+                                    </p>
+                                    {repoVulnerabilities[repo.id].vulnerabilities.slice(0, 5).map((vuln) => (
+                                      <div
+                                        key={vuln.id}
+                                        className="p-2 bg-gray-50 rounded border border-gray-200 text-xs"
+                                      >
+                                        <div className="flex items-start gap-2 mb-1">
+                                          {getSeverityIcon(vuln.severity)}
+                                          <div className="flex-1">
+                                            <p className="font-medium text-gray-800 line-clamp-1">
+                                              {vuln.title}
+                                            </p>
+                                            <p className="text-gray-600 text-xs mt-1 line-clamp-2">
+                                              {vuln.description}
+                                            </p>
+                                            {vuln.file_path && (
+                                              <p className="text-gray-500 text-xs mt-1">
+                                                {vuln.file_path}
+                                                {vuln.line_number && ` (Line ${vuln.line_number})`}
+                                              </p>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                    {repoVulnerabilities[repo.id].total_vulnerabilities > 5 && (
+                                      <p className="text-xs text-gray-500 text-center pt-1">
+                                        + {repoVulnerabilities[repo.id].total_vulnerabilities - 5} more
+                                      </p>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="text-center py-3 text-xs text-gray-500">
+                                    No vulnerabilities found
+                                  </div>
+                                )}
+                              </>
+                            ) : null}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

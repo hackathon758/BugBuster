@@ -327,10 +327,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Enhanced scanning UI with WebSocket real-time updates"
-    - "Repository detail page with AI fix feature"
-  stuck_tasks: 
-    - "WebSocket support for real-time scan progress"
+    - "Repository detail page with all vulnerabilities"
+    - "Clickable repository cards navigation"
+  stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 

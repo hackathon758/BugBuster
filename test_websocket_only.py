@@ -9,7 +9,7 @@ import threading
 import time
 import requests
 
-BASE_URL = "https://syntax-error-solver.preview.emergentagent.com/api"
+BASE_URL = "https://advanced-detection.preview.emergentagent.com/api"
 WS_URL = "wss://content-err-solver.preview.emergentagent.com/ws/scan"
 TEST_USER_EMAIL = "testuser@bugbustersx.com"
 TEST_USER_PASSWORD = "SecurePassword123!"

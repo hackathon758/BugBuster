@@ -6,7 +6,7 @@ Test AI Fix Generation with existing vulnerabilities
 import requests
 import json
 
-BASE_URL = "https://syntax-error-solver.preview.emergentagent.com/api"
+BASE_URL = "https://advanced-detection.preview.emergentagent.com/api"
 TEST_USER_EMAIL = "testuser@bugbustersx.com"
 TEST_USER_PASSWORD = "SecurePassword123!"
 

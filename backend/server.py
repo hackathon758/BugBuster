@@ -389,7 +389,7 @@ Original Code:
 Provide a secure, fixed version of this code along with explanations."""
 
         response = chat.send_message(
-            UserMessage(content=prompt),
+            UserMessage(text=prompt),
             model="gemini-2.0-flash-exp",
             temperature=0.3
         )

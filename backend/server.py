@@ -114,6 +114,9 @@ class RepositoryScanRequest(BaseModel):
     repository_id: str
     files: List[Dict[str, Any]]  # [{'path': 'file.py', 'content': '...', 'language': 'python'}]
 
+class GitHubRepoScanRequest(BaseModel):
+    github_url: str
+
 # ==================== AUTH HELPERS ====================
 
 def create_jwt_token(user_id: str, email: str) -> str:

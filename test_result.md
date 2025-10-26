@@ -128,6 +128,9 @@ backend:
       - working: "NA"
         agent: "main"
         comment: "Created generate_ai_fix() function using Gemini AI to analyze vulnerabilities and generate secure fixed code. Added POST /api/vulnerabilities/generate-fix endpoint that returns: fixed_code (secure version), explanation (what was changed and why), improvements (list of specific fixes made). Uses Gemini 2.0 Flash model with temperature 0.3 for consistent, secure fixes."
+      - working: "NA"
+        agent: "main"
+        comment: "BUG FIX: Fixed UserMessage initialization error. Changed UserMessage(content=prompt) to UserMessage(text=prompt) at line 392. The emergentintegrations library expects 'text' parameter, not 'content'. Installed emergentintegrations library and restarted backend. Server now running successfully."
 
   - task: "Download fixed code endpoint"
     implemented: true

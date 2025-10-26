@@ -326,10 +326,12 @@ export default function RepositoryScannerEnhanced({ user }) {
           /* Scanning Progress */
           <div className="space-y-6">
             {/* Progress Overview */}
-            <Card className="bg-white/80 backdrop-blur-sm border-gray-200 shadow-xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                  <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+            <Card className="bg-white/90 backdrop-blur-sm border-gray-200 shadow-2xl">
+              <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
+                <CardTitle className="flex items-center gap-3 text-xl" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                  </div>
                   Scanning in Progress
                 </CardTitle>
               </CardHeader>

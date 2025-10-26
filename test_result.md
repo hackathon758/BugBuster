@@ -122,6 +122,9 @@ backend:
       - working: "NA"
         agent: "main"
         comment: "🔧 WEBSOCKET FIX: Root cause identified - WebSocket endpoint was missing /api prefix required by Kubernetes ingress routing rules. Fixed by: 1) Changed backend endpoint from /ws/scan/{session_id} to /api/ws/scan/{session_id}, 2) Updated frontend WebSocket connection URL to include /api prefix. Backend restarted successfully. Ready for retesting."
+      - working: "NA"
+        agent: "main"
+        comment: "🐛 JSON PARSING BUG FIX: Fixed critical frontend bug causing 'Unexpected token p, pong is not valid JSON' error. The WebSocket onmessage handler was trying to JSON.parse ALL messages including keep-alive 'pong' responses (plain text). Fixed in RepositoryScannerEnhanced.js by: 1) Adding check to ignore 'pong'/'ping' keep-alive messages, 2) Wrapping JSON.parse in try-catch block for graceful error handling. Hot-reload applied. Ready for comprehensive WebSocket testing."
 
   - task: "AI-powered vulnerability fix generation"
     implemented: true

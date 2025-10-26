@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "User wants to paste a GitHub repository URL and have the entire codebase scanned immediately for security vulnerabilities"
+user_problem_statement: "User wants advanced cross-language vulnerability analysis with AST parsing, taint analysis, pattern recognition, and cross-language security gap detection for multiple programming languages (Python, JavaScript, Java, Go, Rust, TypeScript)"
 
 backend:
   - task: "WebSocket support for real-time scan progress"

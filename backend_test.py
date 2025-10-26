@@ -140,9 +140,9 @@ class BugBustersXTester:
     def test_github_scan_valid_repo(self):
         """Test GitHub scanning with a valid small repository"""
         try:
-            # Using a small public repository for testing
+            # Using a small public repository with actual code files for testing
             scan_data = {
-                "github_url": "https://github.com/octocat/Hello-World"
+                "github_url": "https://github.com/octocat/Spoon-Knife"
             }
             
             print("   Starting GitHub repository scan (this may take 30-60 seconds)...")

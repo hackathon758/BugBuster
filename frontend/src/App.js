@@ -91,7 +91,7 @@ function App() {
             path="/scanner"
             element={
               <ProtectedRoute>
-                <RepositoryScanner user={user} />
+                <RepositoryScannerEnhanced user={user} />
               </ProtectedRoute>
             }
           />

@@ -550,6 +550,149 @@ async def get_repository(repo_id: str, current_user: dict = Depends(get_current_
     
     return repo
 
+@api_router.post("/repositories/scan-github")
+async def scan_github_repository(request: GitHubRepoScanRequest, current_user: dict = Depends(get_current_user)):
+    """
+    Fetch and scan a GitHub repository by URL
+    """
+    try:
+        # Parse GitHub URL
+        github_info = parse_github_url(request.github_url)
+        owner = github_info['owner']
+        repo_name = github_info['repo']
+        
+        # Create repository record
+        repo = Repository(
+            user_id=current_user['id'],
+            name=f"{owner}/{repo_name}",
+            description=f"GitHub repository: {request.github_url}",
+            language="multiple"
+        )
+        
+        repo_dict = repo.model_dump()
+        repo_dict['created_at'] = repo_dict['created_at'].isoformat()
+        repo_dict['github_url'] = request.github_url
+        await db.repositories.insert_one(repo_dict)
+        
+        # Fetch all files from GitHub
+        files = await fetch_github_repo_contents(owner, repo_name)
+        
+        if not files:
+            raise HTTPException(status_code=400, detail="No code files found in repository")
+        
+        # Create scan record
+        scan = Scan(
+            repository_id=repo.id,
+            user_id=current_user['id'],
+            status='processing',
+            total_files=len(files)
+        )
+        
+        scan_dict = scan.model_dump()
+        scan_dict['started_at'] = scan_dict['started_at'].isoformat()
+        await db.scans.insert_one(scan_dict)
+        
+        # Analyze each file
+        all_vulnerabilities = []
+        files_analyzed = 0
+        
+        for file_data in files:
+            try:
+                # Skip very large files (> 100KB)
+                if file_data.get('size', 0) > 100000:
+                    continue
+                
+                vulnerabilities = await analyze_code_with_gemini(
+                    file_data['content'],
+                    file_data.get('language', 'unknown')
+                )
+                
+                files_analyzed += 1
+                
+                # Store vulnerabilities
+                for vuln_data in vulnerabilities:
+                    vuln = Vulnerability(
+                        scan_id=scan.id,
+                        severity=vuln_data.get('severity', 'info'),
+                        title=vuln_data.get('title', 'Unknown Vulnerability'),
+                        description=vuln_data.get('description', ''),
+                        file_path=file_data.get('path'),
+                        line_number=vuln_data.get('line_number'),
+                        code_snippet=file_data.get('content', '')[:200],
+                        cwe_id=vuln_data.get('cwe_id'),
+                        owasp_category=vuln_data.get('owasp_category'),
+                        remediation=vuln_data.get('remediation')
+                    )
+                    
+                    vuln_dict = vuln.model_dump()
+                    vuln_dict['created_at'] = vuln_dict['created_at'].isoformat()
+                    await db.vulnerabilities.insert_one(vuln_dict)
+                    all_vulnerabilities.append(vuln)
+            except Exception as e:
+                logging.error(f"Error analyzing file {file_data.get('path')}: {e}")
+        
+        # Calculate security score
+        severity_counts = {'critical': 0, 'high': 0, 'medium': 0, 'low': 0, 'info': 0}
+        for vuln in all_vulnerabilities:
+            severity = vuln.severity.lower()
+            if severity in severity_counts:
+                severity_counts[severity] += 1
+        
+        total_vulns = len(all_vulnerabilities)
+        if total_vulns == 0:
+            security_score = 100
+        else:
+            weighted_score = (
+                severity_counts['critical'] * 20 +
+                severity_counts['high'] * 10 +
+                severity_counts['medium'] * 5 +
+                severity_counts['low'] * 2 +
+                severity_counts['info'] * 1
+            )
+            security_score = max(0, 100 - weighted_score)
+        
+        # Update scan status
+        await db.scans.update_one(
+            {'id': scan.id},
+            {
+                '$set': {
+                    'status': 'completed',
+                    'completed_at': datetime.now(timezone.utc).isoformat(),
+                    'vulnerabilities_count': total_vulns,
+                    'security_score': security_score
+                }
+            }
+        )
+        
+        # Update repository
+        await db.repositories.update_one(
+            {'id': repo.id},
+            {
+                '$set': {
+                    'last_scan': datetime.now(timezone.utc).isoformat(),
+                    'security_score': security_score
+                }
+            }
+        )
+        
+        return {
+            'repository_id': repo.id,
+            'repository_name': repo.name,
+            'scan_id': scan.id,
+            'status': 'completed',
+            'total_files': len(files),
+            'files_analyzed': files_analyzed,
+            'total_vulnerabilities': total_vulns,
+            'severity_counts': severity_counts,
+            'security_score': security_score
+        }
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logging.error(f"GitHub scan error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to scan repository: {str(e)}")
+
 # ==================== SCAN ROUTES ====================
 
 @api_router.get("/scans")

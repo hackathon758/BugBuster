@@ -107,15 +107,18 @@ user_problem_statement: "User wants to paste a GitHub repository URL and have th
 backend:
   - task: "WebSocket support for real-time scan progress"
     implemented: true
-    working: "NA"
+    working: false
     file: "/app/backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Added WebSocket endpoint (/ws/scan/{session_id}) and ConnectionManager for real-time communication. Created new endpoint POST /api/repositories/scan-github-ws that initiates background scanning task and sends real-time progress updates via WebSocket including: status messages, file-by-file progress, vulnerabilities found per file, completion status with full results."
+      - working: false
+        agent: "testing"
+        comment: "❌ ISSUE FOUND: WebSocket real-time scan progress partially working. The HTTP endpoint POST /api/repositories/scan-github-ws works correctly ✅ - successfully initiates scans and returns proper session_id, repository_id, and status='started'. However, WebSocket connection to wss://content-err-solver.preview.emergentagent.com/ws/scan/{session_id} fails ❌. The WebSocket endpoint returns frontend HTML instead of establishing WebSocket connection, indicating Kubernetes ingress routing issue. Backend WebSocket code is correctly implemented with @app.websocket decorator and ConnectionManager. This is an infrastructure/deployment configuration issue, not a code issue."
 
   - task: "AI-powered vulnerability fix generation"
     implemented: true

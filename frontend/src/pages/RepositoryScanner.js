@@ -8,8 +8,9 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Textarea } from '../components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { toast } from 'sonner';
-import { Upload, Shield, Loader2, CheckCircle2 } from 'lucide-react';
+import { Upload, Shield, Loader2, CheckCircle2, Github } from 'lucide-react';
 import { Badge } from '../components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 
@@ -20,6 +21,8 @@ export default function RepositoryScanner({ user }) {
   const [files, setFiles] = useState([{ path: '', content: '', language: 'python' }]);
   const [scanning, setScanning] = useState(false);
   const [results, setResults] = useState(null);
+  const [githubUrl, setGithubUrl] = useState('');
+  const [scanningGithub, setScanningGithub] = useState(false);
 
   const languages = [
     { value: 'python', label: 'Python' },

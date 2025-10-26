@@ -7,10 +7,22 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
-import { Github, Loader2, CheckCircle2, AlertCircle, FileCode, Shield, Zap } from 'lucide-react';
+import { Github, Loader2, CheckCircle2, AlertCircle, FileCode, Shield, Zap, Lock, Bug, Code, Database, Key, XCircle } from 'lucide-react';
 import { Badge } from '../components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 import { Progress } from '../components/ui/progress';
+
+// Vulnerability types being checked
+const VULNERABILITY_TYPES = [
+  { id: 'xss', name: 'Cross-Site Scripting (XSS)', icon: Code, description: 'Injection attacks via scripts' },
+  { id: 'sql', name: 'SQL Injection', icon: Database, description: 'Database query manipulation' },
+  { id: 'auth', name: 'Authentication Issues', icon: Lock, description: 'Weak authentication mechanisms' },
+  { id: 'secrets', name: 'Exposed Secrets', icon: Key, description: 'Hardcoded credentials and API keys' },
+  { id: 'csrf', name: 'CSRF Vulnerabilities', icon: Shield, description: 'Cross-site request forgery' },
+  { id: 'insecure', name: 'Insecure Dependencies', icon: AlertCircle, description: 'Vulnerable packages' },
+  { id: 'injection', name: 'Code Injection', icon: Bug, description: 'Command and code injection flaws' },
+  { id: 'config', name: 'Security Misconfigurations', icon: XCircle, description: 'Improper security settings' }
+];
 
 export default function RepositoryScannerEnhanced({ user }) {
   const navigate = useNavigate();
@@ -24,6 +36,7 @@ export default function RepositoryScannerEnhanced({ user }) {
   const [vulnerabilitiesFound, setVulnerabilitiesFound] = useState(0);
   const [scanResults, setScanResults] = useState(null);
   const [statusMessage, setStatusMessage] = useState('');
+  const [checkedVulnerabilities, setCheckedVulnerabilities] = useState([]);
   const wsRef = useRef(null);
   const sessionIdRef = useRef(null);
 

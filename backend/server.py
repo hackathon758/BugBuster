@@ -345,6 +345,77 @@ Return a JSON array of vulnerabilities found."""
         logging.error(f"Gemini analysis error: {e}")
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
+async def generate_ai_fix(code_snippet: str, vulnerability_description: str, language: str, file_path: str) -> Dict[str, Any]:
+    """
+    Generate AI-powered fix for a vulnerability using Gemini
+    """
+    gemini_api_key = os.environ.get('GEMINI_API_KEY')
+    if not gemini_api_key:
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY not configured")
+    
+    try:
+        chat = LlmChat(
+            api_key=gemini_api_key,
+            session_id=f"fix_{uuid.uuid4()}",
+            system_message="""You are an expert software engineer specialized in fixing security vulnerabilities.
+            Given a code snippet with a vulnerability, provide a fixed version of the code.
+            
+            Your response should be a JSON object with:
+            1. fixed_code: The corrected code snippet with vulnerability fixed
+            2. explanation: Brief explanation of what was changed and why
+            3. improvements: List of specific improvements made
+            
+            Return ONLY valid JSON. Example format:
+            {
+              "fixed_code": "corrected code here",
+              "explanation": "Fixed SQL injection by using parameterized queries...",
+              "improvements": [
+                "Replaced string concatenation with parameterized query",
+                "Added input validation",
+                "Implemented proper error handling"
+              ]
+            }"""
+        )
+        
+        prompt = f"""Analyze this {language} code from {file_path} and fix the following vulnerability:
+
+Vulnerability: {vulnerability_description}
+
+Original Code:
+```{language}
+{code_snippet}
+```
+
+Provide a secure, fixed version of this code along with explanations."""
+
+        response = chat.send_message(
+            UserMessage(content=prompt),
+            model="gemini-2.0-flash-exp",
+            temperature=0.3
+        )
+        
+        response_text = response.get('message', '')
+        
+        # Extract JSON from response
+        if '```json' in response_text:
+            response_text = response_text.split('```json')[1].split('```')[0].strip()
+        elif '```' in response_text:
+            response_text = response_text.split('```')[1].split('```')[0].strip()
+        
+        fix_data = json.loads(response_text)
+        return fix_data
+        
+    except json.JSONDecodeError as e:
+        logging.error(f"Failed to parse Gemini fix response: {e}")
+        return {
+            "fixed_code": code_snippet,
+            "explanation": "Failed to generate fix. Please review manually.",
+            "improvements": []
+        }
+    except Exception as e:
+        logging.error(f"Gemini fix generation error: {e}")
+        raise HTTPException(status_code=500, detail=f"Fix generation failed: {str(e)}")
+
 # ==================== AUTH ROUTES ====================
 
 @api_router.post("/auth/register", response_model=UserResponse)

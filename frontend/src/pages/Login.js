@@ -23,7 +23,7 @@ export default function Login({ setUser }) {
       localStorage.setItem('user', JSON.stringify(response.data.user));
       setUser(response.data.user);
       toast.success('Login successful!');
-      navigate('/');
+      navigate('/dashboard');
     } catch (error) {
       const errorMsg = typeof error.response?.data?.detail === 'string' 
         ? error.response.data.detail 

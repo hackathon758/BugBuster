@@ -7,7 +7,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import CodeAnalysis from './pages/CodeAnalysis';
-import RepositoryScanner from './pages/RepositoryScanner';
+import RepositoryScannerEnhanced from './pages/RepositoryScannerEnhanced';
 import Repositories from './pages/Repositories';
 import RepositoryDetail from './pages/RepositoryDetail';
 import Vulnerabilities from './pages/Vulnerabilities';

@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import CodeAnalysis from './pages/CodeAnalysis';
 import RepositoryScanner from './pages/RepositoryScanner';
 import Repositories from './pages/Repositories';
+import RepositoryDetail from './pages/RepositoryDetail';
 import Vulnerabilities from './pages/Vulnerabilities';
 import { Toaster } from './components/ui/sonner';
 

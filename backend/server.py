@@ -798,6 +798,336 @@ async def scan_github_repository(request: GitHubRepoScanRequest, current_user: d
         logging.error(f"GitHub scan error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to scan repository: {str(e)}")
 
+@api_router.post("/repositories/scan-github-ws")
+async def scan_github_repository_with_websocket(request: GitHubRepoScanRequest, current_user: dict = Depends(get_current_user)):
+    """
+    Fetch and scan a GitHub repository by URL with WebSocket progress updates
+    """
+    try:
+        # Generate session ID for WebSocket connection
+        session_id = str(uuid.uuid4())
+        
+        # Parse GitHub URL
+        github_info = parse_github_url(request.github_url)
+        owner = github_info['owner']
+        repo_name = github_info['repo']
+        
+        # Create repository record
+        repo = Repository(
+            user_id=current_user['id'],
+            name=f"{owner}/{repo_name}",
+            description=f"GitHub repository: {request.github_url}",
+            language="multiple"
+        )
+        
+        repo_dict = repo.model_dump()
+        repo_dict['created_at'] = repo_dict['created_at'].isoformat()
+        repo_dict['github_url'] = request.github_url
+        await db.repositories.insert_one(repo_dict)
+        
+        # Start background task for scanning
+        asyncio.create_task(scan_repository_background(session_id, repo.id, current_user['id'], owner, repo_name))
+        
+        return {
+            'session_id': session_id,
+            'repository_id': repo.id,
+            'repository_name': repo.name,
+            'status': 'started'
+        }
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logging.error(f"GitHub scan error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to scan repository: {str(e)}")
+
+async def scan_repository_background(session_id: str, repository_id: str, user_id: str, owner: str, repo_name: str):
+    """
+    Background task to scan repository and send progress updates via WebSocket
+    """
+    try:
+        # Send initial status
+        await manager.send_message({
+            'type': 'status',
+            'message': 'Fetching repository files...',
+            'progress': 5
+        }, session_id)
+        
+        # Fetch all files from GitHub
+        files = await fetch_github_repo_contents(owner, repo_name)
+        
+        if not files:
+            await manager.send_message({
+                'type': 'error',
+                'message': 'No code files found in repository'
+            }, session_id)
+            return
+        
+        await manager.send_message({
+            'type': 'status',
+            'message': f'Found {len(files)} files to scan',
+            'progress': 10,
+            'total_files': len(files)
+        }, session_id)
+        
+        # Create scan record
+        scan = Scan(
+            repository_id=repository_id,
+            user_id=user_id,
+            status='processing',
+            total_files=len(files)
+        )
+        
+        scan_dict = scan.model_dump()
+        scan_dict['started_at'] = scan_dict['started_at'].isoformat()
+        await db.scans.insert_one(scan_dict)
+        
+        # Analyze each file
+        all_vulnerabilities = []
+        files_analyzed = 0
+        
+        for idx, file_data in enumerate(files):
+            try:
+                # Skip very large files (> 100KB)
+                if file_data.get('size', 0) > 100000:
+                    await manager.send_message({
+                        'type': 'file_skipped',
+                        'file_path': file_data.get('path'),
+                        'reason': 'File too large'
+                    }, session_id)
+                    continue
+                
+                # Send progress update
+                progress = 10 + int((idx / len(files)) * 80)
+                await manager.send_message({
+                    'type': 'scanning_file',
+                    'file_path': file_data.get('path'),
+                    'file_number': idx + 1,
+                    'total_files': len(files),
+                    'progress': progress,
+                    'language': file_data.get('language', 'unknown')
+                }, session_id)
+                
+                vulnerabilities = await analyze_code_with_gemini(
+                    file_data['content'],
+                    file_data.get('language', 'unknown')
+                )
+                
+                files_analyzed += 1
+                
+                # Store vulnerabilities
+                for vuln_data in vulnerabilities:
+                    vuln = Vulnerability(
+                        scan_id=scan.id,
+                        severity=vuln_data.get('severity', 'info'),
+                        title=vuln_data.get('title', 'Unknown Vulnerability'),
+                        description=vuln_data.get('description', ''),
+                        file_path=file_data.get('path'),
+                        line_number=vuln_data.get('line_number'),
+                        code_snippet=file_data.get('content', '')[:500],
+                        cwe_id=vuln_data.get('cwe_id'),
+                        owasp_category=vuln_data.get('owasp_category'),
+                        remediation=vuln_data.get('remediation')
+                    )
+                    
+                    vuln_dict = vuln.model_dump()
+                    vuln_dict['created_at'] = vuln_dict['created_at'].isoformat()
+                    await db.vulnerabilities.insert_one(vuln_dict)
+                    all_vulnerabilities.append(vuln)
+                
+                # Send vulnerability update
+                if vulnerabilities:
+                    await manager.send_message({
+                        'type': 'vulnerabilities_found',
+                        'file_path': file_data.get('path'),
+                        'count': len(vulnerabilities)
+                    }, session_id)
+                    
+            except Exception as e:
+                logging.error(f"Error analyzing file {file_data.get('path')}: {e}")
+                await manager.send_message({
+                    'type': 'file_error',
+                    'file_path': file_data.get('path'),
+                    'error': str(e)
+                }, session_id)
+        
+        # Calculate security score
+        severity_counts = {'critical': 0, 'high': 0, 'medium': 0, 'low': 0, 'info': 0}
+        for vuln in all_vulnerabilities:
+            severity = vuln.severity.lower()
+            if severity in severity_counts:
+                severity_counts[severity] += 1
+        
+        total_vulns = len(all_vulnerabilities)
+        if total_vulns == 0:
+            security_score = 100
+        else:
+            weighted_score = (
+                severity_counts['critical'] * 20 +
+                severity_counts['high'] * 10 +
+                severity_counts['medium'] * 5 +
+                severity_counts['low'] * 2 +
+                severity_counts['info'] * 1
+            )
+            security_score = max(0, 100 - weighted_score)
+        
+        # Update scan status
+        await db.scans.update_one(
+            {'id': scan.id},
+            {
+                '$set': {
+                    'status': 'completed',
+                    'completed_at': datetime.now(timezone.utc).isoformat(),
+                    'vulnerabilities_count': total_vulns,
+                    'security_score': security_score
+                }
+            }
+        )
+        
+        # Update repository
+        await db.repositories.update_one(
+            {'id': repository_id},
+            {
+                '$set': {
+                    'last_scan': datetime.now(timezone.utc).isoformat(),
+                    'security_score': security_score
+                }
+            }
+        )
+        
+        # Send completion message
+        await manager.send_message({
+            'type': 'completed',
+            'repository_id': repository_id,
+            'scan_id': scan.id,
+            'total_files': len(files),
+            'files_analyzed': files_analyzed,
+            'total_vulnerabilities': total_vulns,
+            'severity_counts': severity_counts,
+            'security_score': security_score,
+            'progress': 100
+        }, session_id)
+        
+    except Exception as e:
+        logging.error(f"Background scan error: {e}")
+        await manager.send_message({
+            'type': 'error',
+            'message': f'Scan failed: {str(e)}'
+        }, session_id)
+
+@app.websocket("/ws/scan/{session_id}")
+async def websocket_scan_endpoint(websocket: WebSocket, session_id: str):
+    """
+    WebSocket endpoint for receiving real-time scan progress updates
+    """
+    await manager.connect(websocket, session_id)
+    try:
+        while True:
+            # Keep connection alive
+            data = await websocket.receive_text()
+            if data == "ping":
+                await websocket.send_text("pong")
+    except WebSocketDisconnect:
+        manager.disconnect(session_id)
+    except Exception as e:
+        logging.error(f"WebSocket error: {e}")
+        manager.disconnect(session_id)
+
+@api_router.post("/vulnerabilities/generate-fix")
+async def generate_vulnerability_fix(request: VulnerabilityFixRequest, current_user: dict = Depends(get_current_user)):
+    """
+    Generate AI-powered fix for a vulnerability
+    """
+    try:
+        # Verify vulnerability exists and belongs to user
+        vuln = await db.vulnerabilities.find_one({'id': request.vulnerability_id}, {'_id': 0})
+        if not vuln:
+            raise HTTPException(status_code=404, detail="Vulnerability not found")
+        
+        # Verify scan belongs to user
+        scan = await db.scans.find_one({'id': vuln['scan_id'], 'user_id': current_user['id']})
+        if not scan:
+            raise HTTPException(status_code=403, detail="Unauthorized")
+        
+        # Generate fix
+        fix_data = await generate_ai_fix(
+            code_snippet=request.code_snippet,
+            vulnerability_description=vuln['description'],
+            language=request.language,
+            file_path=request.file_path
+        )
+        
+        return {
+            'vulnerability_id': request.vulnerability_id,
+            'original_code': request.code_snippet,
+            'fixed_code': fix_data.get('fixed_code', ''),
+            'explanation': fix_data.get('explanation', ''),
+            'improvements': fix_data.get('improvements', []),
+            'language': request.language,
+            'file_path': request.file_path
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Fix generation error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate fix: {str(e)}")
+
+@api_router.post("/vulnerabilities/download-fix")
+async def download_fixed_code(request: VulnerabilityFixRequest, current_user: dict = Depends(get_current_user)):
+    """
+    Download fixed code as a file
+    """
+    try:
+        # Verify vulnerability exists and belongs to user
+        vuln = await db.vulnerabilities.find_one({'id': request.vulnerability_id}, {'_id': 0})
+        if not vuln:
+            raise HTTPException(status_code=404, detail="Vulnerability not found")
+        
+        # Verify scan belongs to user
+        scan = await db.scans.find_one({'id': vuln['scan_id'], 'user_id': current_user['id']})
+        if not scan:
+            raise HTTPException(status_code=403, detail="Unauthorized")
+        
+        # Generate fix
+        fix_data = await generate_ai_fix(
+            code_snippet=request.code_snippet,
+            vulnerability_description=vuln['description'],
+            language=request.language,
+            file_path=request.file_path
+        )
+        
+        fixed_code = fix_data.get('fixed_code', request.code_snippet)
+        
+        # Create file response
+        file_extension = {
+            'python': '.py',
+            'javascript': '.js',
+            'typescript': '.ts',
+            'java': '.java',
+            'cpp': '.cpp',
+            'go': '.go',
+            'ruby': '.rb',
+            'php': '.php'
+        }.get(request.language.lower(), '.txt')
+        
+        filename = f"fixed_{Path(request.file_path).stem}{file_extension}"
+        
+        def iterfile():
+            yield fixed_code.encode('utf-8')
+        
+        return StreamingResponse(
+            iterfile(),
+            media_type='application/octet-stream',
+            headers={'Content-Disposition': f'attachment; filename="{filename}"'}
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Download error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to download fix: {str(e)}")
+
 # ==================== SCAN ROUTES ====================
 
 @api_router.get("/scans")

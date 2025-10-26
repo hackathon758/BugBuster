@@ -292,6 +292,20 @@ export default function RepositoryDetail({ user }) {
                           </div>
                         )}
 
+                        {/* AI Fix Button */}
+                        <div className="pt-4 border-t">
+                          <Button
+                            onClick={() => {
+                              setSelectedVulnerability(vuln);
+                              setShowAIFixModal(true);
+                            }}
+                            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                          >
+                            <Sparkles className="w-4 h-4 mr-2" />
+                            Generate AI-Powered Fix
+                          </Button>
+                        </div>
+
                         {/* Timestamp */}
                         <div className="text-xs text-gray-500 pt-2 border-t">
                           Found: {new Date(vuln.created_at).toLocaleString()}

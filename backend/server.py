@@ -1011,7 +1011,7 @@ async def scan_repository_background(session_id: str, repository_id: str, user_i
             'message': f'Scan failed: {str(e)}'
         }, session_id)
 
-@app.websocket("/ws/scan/{session_id}")
+@app.websocket("/api/ws/scan/{session_id}")
 async def websocket_scan_endpoint(websocket: WebSocket, session_id: str):
     """
     WebSocket endpoint for receiving real-time scan progress updates

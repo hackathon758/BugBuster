@@ -429,24 +429,30 @@ export default function RepositoryScannerEnhanced({ user }) {
 
             {/* File List */}
             {scannedFiles.length > 0 && (
-              <Card className="bg-white/80 backdrop-blur-sm border-gray-200">
-                <CardHeader>
-                  <CardTitle style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              <Card className="bg-white/90 backdrop-blur-sm border-gray-200 shadow-xl">
+                <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-purple-50 to-pink-50">
+                  <CardTitle className="flex items-center gap-3 text-xl" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <FileCode className="w-6 h-6 text-purple-600" />
+                    </div>
                     Files Being Scanned
                   </CardTitle>
+                  <p className="text-sm text-gray-600 mt-2">
+                    Real-time file analysis progress
+                  </p>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                <CardContent className="p-4">
+                  <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
                     {scannedFiles.slice().reverse().map((file, index) => (
                       <div
                         key={index}
-                        className={`flex items-center justify-between p-3 rounded-lg border transition-all duration-300 ${
+                        className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all duration-300 ${
                           file.status === 'scanning' 
-                            ? 'bg-blue-50 border-blue-200 animate-pulse' 
+                            ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-300 animate-pulse shadow-md' 
                             : file.status === 'completed'
-                            ? 'bg-green-50 border-green-200'
+                            ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-300'
                             : file.status === 'error'
-                            ? 'bg-red-50 border-red-200'
+                            ? 'bg-gradient-to-r from-red-50 to-pink-50 border-red-300'
                             : 'bg-gray-50 border-gray-200'
                         }`}
                       >

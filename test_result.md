@@ -237,7 +237,6 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Repository-specific vulnerabilities endpoint"
     - "Repository-specific vulnerabilities display"
   stuck_tasks: []
   test_all: false

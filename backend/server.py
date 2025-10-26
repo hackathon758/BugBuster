@@ -778,6 +778,63 @@ async def get_vulnerability(vuln_id: str, current_user: dict = Depends(get_curre
     
     return vuln
 
+@api_router.get("/repositories/{repo_id}/vulnerabilities")
+async def get_repository_vulnerabilities(
+    repo_id: str,
+    severity: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get all vulnerabilities for a specific repository
+    """
+    # Verify repository belongs to user
+    repo = await db.repositories.find_one({'id': repo_id, 'user_id': current_user['id']})
+    if not repo:
+        raise HTTPException(status_code=404, detail="Repository not found")
+    
+    # Get all scans for this repository
+    scans = await db.scans.find(
+        {'repository_id': repo_id, 'user_id': current_user['id']},
+        {'id': 1, '_id': 0}
+    ).to_list(1000)
+    
+    scan_ids = [s['id'] for s in scans]
+    
+    if not scan_ids:
+        return {
+            'repository_id': repo_id,
+            'repository_name': repo.get('name', ''),
+            'total_vulnerabilities': 0,
+            'severity_counts': {'critical': 0, 'high': 0, 'medium': 0, 'low': 0, 'info': 0},
+            'vulnerabilities': []
+        }
+    
+    # Build query for vulnerabilities
+    query = {'scan_id': {'$in': scan_ids}}
+    if severity:
+        query['severity'] = severity
+    
+    vulnerabilities = await db.vulnerabilities.find(query, {'_id': 0}).to_list(1000)
+    
+    for vuln in vulnerabilities:
+        if isinstance(vuln.get('created_at'), str):
+            vuln['created_at'] = datetime.fromisoformat(vuln['created_at'])
+    
+    # Calculate severity counts
+    severity_counts = {'critical': 0, 'high': 0, 'medium': 0, 'low': 0, 'info': 0}
+    for vuln in vulnerabilities:
+        severity = vuln.get('severity', 'info').lower()
+        if severity in severity_counts:
+            severity_counts[severity] += 1
+    
+    return {
+        'repository_id': repo_id,
+        'repository_name': repo.get('name', ''),
+        'total_vulnerabilities': len(vulnerabilities),
+        'severity_counts': severity_counts,
+        'vulnerabilities': vulnerabilities
+    }
+
 # ==================== DASHBOARD ROUTES ====================
 
 @api_router.get("/dashboard/overview")

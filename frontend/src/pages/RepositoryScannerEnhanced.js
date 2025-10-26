@@ -40,7 +40,7 @@ export default function RepositoryScannerEnhanced({ user }) {
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsHost = window.location.hostname;
     const wsPort = window.location.port ? `:${window.location.port}` : '';
-    const wsUrl = `${wsProtocol}//${wsHost}${wsPort}/ws/scan/${sessionId}`;
+    const wsUrl = `${wsProtocol}//${wsHost}${wsPort}/api/ws/scan/${sessionId}`;
     
     const ws = new WebSocket(wsUrl);
     

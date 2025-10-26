@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Shield, Code, Scanner, FileCode, AlertTriangle, Home, Menu, X, LogOut } from 'lucide-react';
+import { Shield, Code, Scan, FileCode, AlertTriangle, Home, Menu, X, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
 
 export default function Navigation({ user }) {

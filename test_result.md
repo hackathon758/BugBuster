@@ -390,6 +390,42 @@ frontend:
       - working: "NA"
         agent: "main"
         comment: "Added tab-based interface with two tabs: 'GitHub URL' (new) and 'Manual Upload' (existing). Added githubUrl state and scanningGithub loading state"
+
+  - task: "Advanced Scanner UI with Dual Mode"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/AdvancedScanner.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Created new AdvancedScanner page with tabbed interface for Basic vs Advanced scan modes. Advanced mode shows 7-stage analysis pipeline with real-time progress: Initialization → AST Parsing → IR Generation → Taint Analysis → Pattern Recognition → Cross-Language Analysis → Finalization. Displays cross-language vulnerabilities count, algorithms used, and detailed stage-by-stage progress with icons and descriptions."
+  
+  - task: "Navigation updated with Advanced Scan link"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/Navigation.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added 'Advanced Scan' navigation item with Zap icon linking to /advanced-scanner route. Positioned between 'Scan Repository' and 'Repositories' in navigation menu."
+  
+  - task: "App routing for Advanced Scanner"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added /advanced-scanner route with AdvancedScanner component. Route is protected and requires authentication. Imported AdvancedScanner component at top of file."
   
   - task: "GitHub URL input and validation"
     implemented: true

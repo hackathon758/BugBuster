@@ -312,11 +312,10 @@ metadata:
 
 test_plan:
   current_focus:
-    - "WebSocket support for real-time scan progress"
-    - "AI-powered vulnerability fix generation"
     - "Enhanced scanning UI with WebSocket real-time updates"
     - "Repository detail page with AI fix feature"
-  stuck_tasks: []
+  stuck_tasks: 
+    - "WebSocket support for real-time scan progress"
   test_all: false
   test_priority: "high_first"
 

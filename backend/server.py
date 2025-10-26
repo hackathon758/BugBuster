@@ -388,11 +388,7 @@ Original Code:
 
 Provide a secure, fixed version of this code along with explanations."""
 
-        response = chat.send_message(
-            UserMessage(text=prompt),
-            model="gemini-2.0-flash-exp",
-            temperature=0.3
-        )
+        response = await chat.send_message(UserMessage(text=prompt))
         
         response_text = response.get('message', '')
         

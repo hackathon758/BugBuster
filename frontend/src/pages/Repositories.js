@@ -14,12 +14,10 @@ import { Code, Plus, Calendar, Shield, TrendingUp } from 'lucide-react';
 import { Badge } from '../components/ui/badge';
 
 export default function Repositories({ user }) {
+  const navigate = useNavigate();
   const [repositories, setRepositories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [expandedRepos, setExpandedRepos] = useState({});
-  const [repoVulnerabilities, setRepoVulnerabilities] = useState({});
-  const [loadingVulns, setLoadingVulns] = useState({});
   const [formData, setFormData] = useState({
     name: '',
     description: '',

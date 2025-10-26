@@ -337,18 +337,70 @@ export default function RepositoryScannerEnhanced({ user }) {
 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-3 gap-4">
-                  <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl">
+                  <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
                     <div className="text-3xl font-bold text-blue-600">{totalFiles}</div>
-                    <p className="text-sm text-gray-600 mt-1">Total Files</p>
+                    <p className="text-sm text-gray-600 mt-1 font-medium">Total Files</p>
                   </div>
-                  <div className="text-center p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl">
+                  <div className="text-center p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-100">
                     <div className="text-3xl font-bold text-green-600">{filesAnalyzed}</div>
-                    <p className="text-sm text-gray-600 mt-1">Analyzed</p>
+                    <p className="text-sm text-gray-600 mt-1 font-medium">Analyzed</p>
                   </div>
-                  <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-red-50 rounded-xl">
+                  <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-red-50 rounded-xl border border-orange-100">
                     <div className="text-3xl font-bold text-orange-600">{vulnerabilitiesFound}</div>
-                    <p className="text-sm text-gray-600 mt-1">Vulnerabilities</p>
+                    <p className="text-sm text-gray-600 mt-1 font-medium">Issues Found</p>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Vulnerability Types Checklist */}
+            <Card className="bg-white/80 backdrop-blur-sm border-gray-200 shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  <Shield className="w-6 h-6 text-blue-600" />
+                  Security Checks Being Performed
+                </CardTitle>
+                <p className="text-sm text-gray-600 mt-1">
+                  AI-powered analysis for common vulnerability patterns
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {VULNERABILITY_TYPES.map((vulnType) => {
+                    const Icon = vulnType.icon;
+                    const isChecked = checkedVulnerabilities.includes(vulnType.id);
+                    const isChecking = isChecked && scanProgress < 100;
+                    
+                    return (
+                      <div
+                        key={vulnType.id}
+                        className={`flex items-start gap-3 p-4 rounded-lg border-2 transition-all duration-500 ${
+                          isChecked
+                            ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-300 shadow-sm'
+                            : 'bg-gray-50 border-gray-200 opacity-60'
+                        }`}
+                      >
+                        <div className={`mt-0.5 transition-all duration-300 ${isChecking ? 'animate-pulse' : ''}`}>
+                          {isChecked ? (
+                            <CheckCircle2 className="w-5 h-5 text-green-600" />
+                          ) : (
+                            <div className="w-5 h-5 rounded-full border-2 border-gray-300" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <Icon className={`w-4 h-4 ${isChecked ? 'text-green-700' : 'text-gray-400'}`} />
+                            <p className={`font-semibold text-sm ${isChecked ? 'text-gray-900' : 'text-gray-500'}`}>
+                              {vulnType.name}
+                            </p>
+                          </div>
+                          <p className={`text-xs mt-1 ${isChecked ? 'text-gray-600' : 'text-gray-400'}`}>
+                            {vulnType.description}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>

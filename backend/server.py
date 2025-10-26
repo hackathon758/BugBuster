@@ -375,7 +375,7 @@ async def generate_ai_fix(code_snippet: str, vulnerability_description: str, lan
                 "Implemented proper error handling"
               ]
             }"""
-        )
+        ).with_model("gemini", "gemini-2.0-flash")
         
         prompt = f"""Analyze this {language} code from {file_path} and fix the following vulnerability:
 

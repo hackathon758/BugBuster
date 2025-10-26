@@ -7,9 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { AlertTriangle, Shield, Info, FileCode, ArrowLeft, Calendar, Code } from 'lucide-react';
+import { AlertTriangle, Shield, Info, FileCode, ArrowLeft, Calendar, Code, Sparkles } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../components/ui/accordion';
 import { toast } from 'sonner';
+import { AIFixModal } from '../components/AIFixModal';
 
 export default function RepositoryDetail({ user }) {
   const { repoId } = useParams();
@@ -18,6 +19,8 @@ export default function RepositoryDetail({ user }) {
   const [vulnerabilities, setVulnerabilities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [severityFilter, setSeverityFilter] = useState('all');
+  const [selectedVulnerability, setSelectedVulnerability] = useState(null);
+  const [showAIFixModal, setShowAIFixModal] = useState(false);
   const [severityCounts, setSeverityCounts] = useState({});
 
   useEffect(() => {

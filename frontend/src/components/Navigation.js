@@ -18,6 +18,7 @@ export default function Navigation({ user }) {
     { path: '/dashboard', label: 'Dashboard', icon: Home },
     { path: '/analyze', label: 'Analyze Code', icon: Code },
     { path: '/scanner', label: 'Scan Repository', icon: Scan },
+    { path: '/advanced-scanner', label: 'Advanced Scan', icon: Zap },
     { path: '/repositories', label: 'Repositories', icon: FileCode },
     { path: '/vulnerabilities', label: 'Vulnerabilities', icon: AlertTriangle },
   ];

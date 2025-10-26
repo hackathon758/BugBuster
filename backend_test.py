@@ -893,6 +893,26 @@ class BugBustersXTester:
         self.test_repository_vulnerabilities_no_auth()
         self.test_repository_vulnerabilities_no_scans()
         
+        # NEW FEATURES TESTING
+        print("\n🚀 Testing New WebSocket and AI Features...")
+        
+        # WebSocket scan endpoint test
+        ws_scan_result = self.test_websocket_scan_endpoint()
+        
+        # AI fix generation tests
+        fix_data = None
+        if scan_result:
+            fix_data = self.test_ai_fix_generation(scan_result)
+        self.test_ai_fix_invalid_vulnerability()
+        
+        # Download fixed code tests
+        if fix_data:
+            self.test_download_fixed_code(fix_data)
+        self.test_download_fixed_code_invalid_vulnerability()
+        
+        # Authentication tests for AI features
+        self.test_ai_features_no_auth()
+        
         # Summary
         print("\n" + "=" * 50)
         print("📊 TEST SUMMARY")

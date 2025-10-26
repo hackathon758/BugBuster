@@ -603,6 +603,258 @@ class BugBustersXTester:
             self.log_test("Repository Vulnerabilities Isolation", False, f"Test error: {str(e)}")
             return False
     
+    def test_websocket_scan_endpoint(self):
+        """Test WebSocket scan endpoint (POST /api/repositories/scan-github-ws)"""
+        try:
+            scan_data = {
+                "github_url": "https://github.com/octocat/Spoon-Knife"
+            }
+            
+            print("   Testing WebSocket scan endpoint...")
+            response = self.make_request("POST", "/repositories/scan-github-ws", scan_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ["session_id", "repository_id", "repository_name", "status"]
+                
+                missing_fields = [field for field in required_fields if field not in data]
+                
+                if not missing_fields:
+                    if data["status"] == "started":
+                        self.log_test("WebSocket Scan Endpoint", True, 
+                                    f"WebSocket scan initiated successfully: session_id={data['session_id']}, "
+                                    f"repository={data['repository_name']}")
+                        return data
+                    else:
+                        self.log_test("WebSocket Scan Endpoint", False, 
+                                    f"Expected status 'started' but got '{data['status']}'", data)
+                        return None
+                else:
+                    self.log_test("WebSocket Scan Endpoint", False, 
+                                f"Response missing required fields: {missing_fields}", data)
+                    return None
+            else:
+                self.log_test("WebSocket Scan Endpoint", False, 
+                            f"WebSocket scan failed with status {response.status_code}", response.text)
+                return None
+        except Exception as e:
+            self.log_test("WebSocket Scan Endpoint", False, f"WebSocket scan error: {str(e)}")
+            return None
+    
+    def test_ai_fix_generation(self, scan_result: Dict):
+        """Test AI-powered vulnerability fix generation"""
+        if not scan_result:
+            self.log_test("AI Fix Generation", False, "No scan result to test with")
+            return None
+        
+        try:
+            # First get vulnerabilities from the scan
+            response = self.make_request("GET", f"/vulnerabilities?scan_id={scan_result['scan_id']}")
+            
+            if response.status_code != 200:
+                self.log_test("AI Fix Generation", False, 
+                            f"Failed to get vulnerabilities: {response.status_code}")
+                return None
+            
+            vulnerabilities = response.json()
+            
+            if not vulnerabilities:
+                self.log_test("AI Fix Generation", False, "No vulnerabilities found to test fix generation")
+                return None
+            
+            # Use the first vulnerability for testing
+            vuln = vulnerabilities[0]
+            
+            # Create test fix request
+            fix_request = {
+                "vulnerability_id": vuln["id"],
+                "code_snippet": vuln.get("code_snippet", "print('Hello World')"),
+                "language": "python",
+                "file_path": vuln.get("file_path", "test.py")
+            }
+            
+            print("   Generating AI fix (this may take 10-20 seconds)...")
+            response = self.make_request("POST", "/vulnerabilities/generate-fix", fix_request)
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ["vulnerability_id", "original_code", "fixed_code", 
+                                 "explanation", "improvements", "language", "file_path"]
+                
+                missing_fields = [field for field in required_fields if field not in data]
+                
+                if not missing_fields:
+                    # Verify the fix is different from original
+                    if data["fixed_code"] != data["original_code"]:
+                        # Verify explanation and improvements are meaningful
+                        if (len(data["explanation"]) > 10 and 
+                            isinstance(data["improvements"], list) and 
+                            len(data["improvements"]) > 0):
+                            
+                            self.log_test("AI Fix Generation", True, 
+                                        f"AI fix generated successfully: {len(data['improvements'])} improvements, "
+                                        f"explanation length: {len(data['explanation'])} chars")
+                            return data
+                        else:
+                            self.log_test("AI Fix Generation", False, 
+                                        "Fix generated but explanation/improvements are insufficient", data)
+                            return None
+                    else:
+                        self.log_test("AI Fix Generation", False, 
+                                    "Fixed code is identical to original code", data)
+                        return None
+                else:
+                    self.log_test("AI Fix Generation", False, 
+                                f"Response missing required fields: {missing_fields}", data)
+                    return None
+            else:
+                self.log_test("AI Fix Generation", False, 
+                            f"Fix generation failed with status {response.status_code}", response.text)
+                return None
+                
+        except Exception as e:
+            self.log_test("AI Fix Generation", False, f"Fix generation error: {str(e)}")
+            return None
+    
+    def test_ai_fix_invalid_vulnerability(self):
+        """Test AI fix generation with invalid vulnerability ID"""
+        try:
+            fix_request = {
+                "vulnerability_id": "invalid-vuln-id-12345",
+                "code_snippet": "print('test')",
+                "language": "python",
+                "file_path": "test.py"
+            }
+            
+            response = self.make_request("POST", "/vulnerabilities/generate-fix", fix_request)
+            
+            if response.status_code == 404:
+                self.log_test("AI Fix - Invalid Vulnerability", True, 
+                            "Correctly returned 404 for invalid vulnerability ID")
+                return True
+            else:
+                self.log_test("AI Fix - Invalid Vulnerability", False, 
+                            f"Expected 404 but got {response.status_code}", response.text)
+                return False
+                
+        except Exception as e:
+            self.log_test("AI Fix - Invalid Vulnerability", False, f"Test error: {str(e)}")
+            return False
+    
+    def test_download_fixed_code(self, fix_data: Dict):
+        """Test download fixed code functionality"""
+        if not fix_data:
+            self.log_test("Download Fixed Code", False, "No fix data to test with")
+            return False
+        
+        try:
+            # Use the same request data that generated the fix
+            download_request = {
+                "vulnerability_id": fix_data["vulnerability_id"],
+                "code_snippet": fix_data["original_code"],
+                "language": fix_data["language"],
+                "file_path": fix_data["file_path"]
+            }
+            
+            print("   Testing code download...")
+            response = self.make_request("POST", "/vulnerabilities/download-fix", download_request)
+            
+            if response.status_code == 200:
+                # Check Content-Disposition header
+                content_disposition = response.headers.get('Content-Disposition', '')
+                
+                if 'attachment' in content_disposition and 'filename=' in content_disposition:
+                    # Check content type
+                    content_type = response.headers.get('Content-Type', '')
+                    
+                    if content_type == 'application/octet-stream':
+                        # Check that we got some content
+                        if len(response.content) > 0:
+                            self.log_test("Download Fixed Code", True, 
+                                        f"File download successful: {content_disposition}, "
+                                        f"size: {len(response.content)} bytes")
+                            return True
+                        else:
+                            self.log_test("Download Fixed Code", False, 
+                                        "Download response has no content")
+                            return False
+                    else:
+                        self.log_test("Download Fixed Code", False, 
+                                    f"Wrong content type: expected 'application/octet-stream', got '{content_type}'")
+                        return False
+                else:
+                    self.log_test("Download Fixed Code", False, 
+                                f"Missing or invalid Content-Disposition header: '{content_disposition}'")
+                    return False
+            else:
+                self.log_test("Download Fixed Code", False, 
+                            f"Download failed with status {response.status_code}", response.text)
+                return False
+                
+        except Exception as e:
+            self.log_test("Download Fixed Code", False, f"Download error: {str(e)}")
+            return False
+    
+    def test_download_fixed_code_invalid_vulnerability(self):
+        """Test download fixed code with invalid vulnerability ID"""
+        try:
+            download_request = {
+                "vulnerability_id": "invalid-vuln-id-12345",
+                "code_snippet": "print('test')",
+                "language": "python",
+                "file_path": "test.py"
+            }
+            
+            response = self.make_request("POST", "/vulnerabilities/download-fix", download_request)
+            
+            if response.status_code == 404:
+                self.log_test("Download Fixed Code - Invalid Vulnerability", True, 
+                            "Correctly returned 404 for invalid vulnerability ID")
+                return True
+            else:
+                self.log_test("Download Fixed Code - Invalid Vulnerability", False, 
+                            f"Expected 404 but got {response.status_code}", response.text)
+                return False
+                
+        except Exception as e:
+            self.log_test("Download Fixed Code - Invalid Vulnerability", False, f"Test error: {str(e)}")
+            return False
+    
+    def test_ai_features_no_auth(self):
+        """Test AI features without authentication"""
+        try:
+            # Temporarily remove auth token
+            original_token = self.auth_token
+            self.auth_token = None
+            
+            # Test AI fix generation
+            fix_request = {
+                "vulnerability_id": "dummy-id",
+                "code_snippet": "print('test')",
+                "language": "python",
+                "file_path": "test.py"
+            }
+            
+            response1 = self.make_request("POST", "/vulnerabilities/generate-fix", fix_request)
+            response2 = self.make_request("POST", "/vulnerabilities/download-fix", fix_request)
+            
+            # Restore auth token
+            self.auth_token = original_token
+            
+            if (response1.status_code in [401, 403] and response2.status_code in [401, 403]):
+                self.log_test("AI Features - No Auth", True, 
+                            "Both AI endpoints correctly require authentication")
+                return True
+            else:
+                self.log_test("AI Features - No Auth", False, 
+                            f"Expected 401/403 but got fix:{response1.status_code}, download:{response2.status_code}")
+                return False
+                
+        except Exception as e:
+            self.auth_token = original_token  # Restore token even on error
+            self.log_test("AI Features - No Auth", False, f"Test error: {str(e)}")
+            return False
+    
     def run_all_tests(self):
         """Run all tests in sequence"""
         print("🚀 Starting BUGBUSTERSX Backend Tests")

@@ -25,7 +25,10 @@ export default function Login({ setUser }) {
       toast.success('Login successful!');
       navigate('/');
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Login failed');
+      const errorMsg = typeof error.response?.data?.detail === 'string' 
+        ? error.response.data.detail 
+        : error.response?.data?.detail?.[0]?.msg || error.message || 'Login failed';
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }

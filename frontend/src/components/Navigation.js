@@ -15,7 +15,7 @@ export default function Navigation({ user }) {
   };
 
   const navItems = [
-    { path: '/', label: 'Dashboard', icon: Home },
+    { path: '/dashboard', label: 'Dashboard', icon: Home },
     { path: '/analyze', label: 'Analyze Code', icon: Code },
     { path: '/scanner', label: 'Scan Repository', icon: Scan },
     { path: '/repositories', label: 'Repositories', icon: FileCode },

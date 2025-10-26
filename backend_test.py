@@ -327,6 +327,175 @@ class BugBustersXTester:
             self.log_test("Authentication Required", False, f"Test error: {str(e)}")
             return False
     
+    def test_repository_vulnerabilities_endpoint(self, scan_result: Dict):
+        """Test the repository-specific vulnerabilities endpoint"""
+        if not scan_result:
+            self.log_test("Repository Vulnerabilities Endpoint", False, "No scan result to test with")
+            return False
+        
+        try:
+            repo_id = scan_result["repository_id"]
+            
+            # Test the repository vulnerabilities endpoint
+            response = self.make_request("GET", f"/repositories/{repo_id}/vulnerabilities")
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check required fields
+                required_fields = ["repository_id", "repository_name", "total_vulnerabilities", 
+                                 "severity_counts", "vulnerabilities"]
+                missing_fields = [field for field in required_fields if field not in data]
+                
+                if missing_fields:
+                    self.log_test("Repository Vulnerabilities Endpoint", False, 
+                                f"Response missing required fields: {missing_fields}", data)
+                    return False
+                
+                # Verify repository_id matches
+                if data["repository_id"] != repo_id:
+                    self.log_test("Repository Vulnerabilities Endpoint", False, 
+                                f"Repository ID mismatch: expected {repo_id}, got {data['repository_id']}")
+                    return False
+                
+                # Verify severity_counts structure
+                expected_severities = ["critical", "high", "medium", "low", "info"]
+                severity_counts = data["severity_counts"]
+                for severity in expected_severities:
+                    if severity not in severity_counts:
+                        self.log_test("Repository Vulnerabilities Endpoint", False, 
+                                    f"Missing severity count for: {severity}")
+                        return False
+                
+                # Verify total matches vulnerabilities array length
+                if data["total_vulnerabilities"] != len(data["vulnerabilities"]):
+                    self.log_test("Repository Vulnerabilities Endpoint", False, 
+                                f"Total count mismatch: total={data['total_vulnerabilities']}, "
+                                f"array length={len(data['vulnerabilities'])}")
+                    return False
+                
+                # Verify severity counts match actual vulnerabilities
+                actual_counts = {"critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0}
+                for vuln in data["vulnerabilities"]:
+                    severity = vuln.get("severity", "info").lower()
+                    if severity in actual_counts:
+                        actual_counts[severity] += 1
+                
+                for severity in expected_severities:
+                    if severity_counts[severity] != actual_counts[severity]:
+                        self.log_test("Repository Vulnerabilities Endpoint", False, 
+                                    f"Severity count mismatch for {severity}: "
+                                    f"reported={severity_counts[severity]}, actual={actual_counts[severity]}")
+                        return False
+                
+                self.log_test("Repository Vulnerabilities Endpoint", True, 
+                            f"Successfully retrieved {data['total_vulnerabilities']} vulnerabilities "
+                            f"for repository {data['repository_name']}")
+                return True
+                
+            else:
+                self.log_test("Repository Vulnerabilities Endpoint", False, 
+                            f"Request failed with status {response.status_code}", response.text)
+                return False
+                
+        except Exception as e:
+            self.log_test("Repository Vulnerabilities Endpoint", False, f"Test error: {str(e)}")
+            return False
+    
+    def test_repository_vulnerabilities_invalid_repo(self):
+        """Test repository vulnerabilities endpoint with invalid repository ID"""
+        try:
+            invalid_repo_id = "invalid-repo-id-12345"
+            
+            response = self.make_request("GET", f"/repositories/{invalid_repo_id}/vulnerabilities")
+            
+            if response.status_code == 404:
+                self.log_test("Repository Vulnerabilities - Invalid Repo", True, 
+                            "Correctly returned 404 for invalid repository ID")
+                return True
+            else:
+                self.log_test("Repository Vulnerabilities - Invalid Repo", False, 
+                            f"Expected 404 but got {response.status_code}", response.text)
+                return False
+                
+        except Exception as e:
+            self.log_test("Repository Vulnerabilities - Invalid Repo", False, f"Test error: {str(e)}")
+            return False
+    
+    def test_repository_vulnerabilities_no_auth(self):
+        """Test repository vulnerabilities endpoint without authentication"""
+        try:
+            # Temporarily remove auth token
+            original_token = self.auth_token
+            self.auth_token = None
+            
+            # Use a dummy repo ID
+            response = self.make_request("GET", "/repositories/dummy-repo-id/vulnerabilities")
+            
+            # Restore auth token
+            self.auth_token = original_token
+            
+            if response.status_code == 401 or response.status_code == 403:
+                self.log_test("Repository Vulnerabilities - No Auth", True, 
+                            "Correctly requires authentication")
+                return True
+            else:
+                self.log_test("Repository Vulnerabilities - No Auth", False, 
+                            f"Expected 401/403 but got {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.auth_token = original_token  # Restore token even on error
+            self.log_test("Repository Vulnerabilities - No Auth", False, f"Test error: {str(e)}")
+            return False
+    
+    def test_repository_vulnerabilities_no_scans(self):
+        """Test repository vulnerabilities endpoint for repository with no scans"""
+        try:
+            # Create a new repository without scanning it
+            repo_data = {
+                "name": "Test Repository No Scans",
+                "description": "Repository for testing with no scans",
+                "language": "python"
+            }
+            
+            response = self.make_request("POST", "/repositories", repo_data)
+            
+            if response.status_code == 200:
+                repo = response.json()
+                repo_id = repo["id"]
+                
+                # Test vulnerabilities endpoint for this repository
+                response = self.make_request("GET", f"/repositories/{repo_id}/vulnerabilities")
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    
+                    # Should return 0 vulnerabilities
+                    if (data["total_vulnerabilities"] == 0 and 
+                        len(data["vulnerabilities"]) == 0 and
+                        all(count == 0 for count in data["severity_counts"].values())):
+                        
+                        self.log_test("Repository Vulnerabilities - No Scans", True, 
+                                    "Correctly returned 0 vulnerabilities for repository with no scans")
+                        return True
+                    else:
+                        self.log_test("Repository Vulnerabilities - No Scans", False, 
+                                    f"Expected 0 vulnerabilities but got: {data}")
+                        return False
+                else:
+                    self.log_test("Repository Vulnerabilities - No Scans", False, 
+                                f"Request failed with status {response.status_code}", response.text)
+                    return False
+            else:
+                self.log_test("Repository Vulnerabilities - No Scans", False, 
+                            f"Failed to create test repository: {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_test("Repository Vulnerabilities - No Scans", False, f"Test error: {str(e)}")
+            return False
+    
     def run_all_tests(self):
         """Run all tests in sequence"""
         print("🚀 Starting BUGBUSTERSX Backend Tests")

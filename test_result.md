@@ -181,7 +181,19 @@ backend:
         comment: "✅ TESTED: Repository model correctly stores github_url field. Verified through GET /api/repositories endpoint that GitHub URL is properly stored and retrievable."
 
 frontend:
-  - task: "Repository-specific vulnerabilities display"
+  - task: "Repository detail page with all vulnerabilities"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/RepositoryDetail.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Created dedicated RepositoryDetail page at /repositories/:repoId route. Shows repository information (name, description, language, security score, last scan, GitHub URL), complete list of ALL vulnerabilities for that repository with accordion display, severity filtering dropdown (all/critical/high/medium/low/info), severity count badges, full vulnerability details (description, code snippet, CWE ID, OWASP category, remediation, file path, line number, timestamp). Includes back button to return to repositories list."
+
+  - task: "Clickable repository cards navigation"
     implemented: true
     working: "NA"
     file: "/app/frontend/src/pages/Repositories.js"
@@ -191,7 +203,7 @@ frontend:
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "Added expandable vulnerabilities section to each repository card. Shows severity counts (critical, high, medium, low) with color-coded badges, displays top 5 recent vulnerabilities with titles, descriptions, and file paths. Uses ChevronUp/ChevronDown icons to expand/collapse. Fetches vulnerabilities on-demand when user expands section."
+        comment: "Updated repository cards to be clickable with onClick handler that navigates to /repositories/{repo.id}. Added cursor-pointer class and visual hint 'Click to view all vulnerabilities →' at bottom of cards with scans. Removed previous expandable vulnerability section in favor of dedicated detail page."
 
   - task: "GitHub URL scanning UI with tabs"
     implemented: true

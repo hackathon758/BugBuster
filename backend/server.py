@@ -147,6 +147,97 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 
 # ==================== GEMINI INTEGRATION ====================
 
+# Supported code file extensions
+CODE_EXTENSIONS = {
+    '.py', '.js', '.jsx', '.ts', '.tsx', '.java', '.cpp', '.c', '.h', '.hpp',
+    '.go', '.rb', '.php', '.swift', '.kt', '.rs', '.scala', '.sh', '.bash',
+    '.html', '.css', '.scss', '.sql', '.xml', '.json', '.yaml', '.yml'
+}
+
+def parse_github_url(url: str) -> Dict[str, str]:
+    """
+    Parse GitHub URL to extract owner and repo name
+    Supports formats:
+    - https://github.com/owner/repo
+    - https://github.com/owner/repo.git
+    - github.com/owner/repo
+    """
+    url = url.strip().rstrip('/')
+    
+    # Remove .git suffix if present
+    if url.endswith('.git'):
+        url = url[:-4]
+    
+    # Extract owner and repo using regex
+    patterns = [
+        r'github\.com/([^/]+)/([^/]+)',
+        r'github\.com/([^/]+)/([^/]+)\.git'
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return {
+                'owner': match.group(1),
+                'repo': match.group(2)
+            }
+    
+    raise ValueError("Invalid GitHub URL format")
+
+async def fetch_github_repo_contents(owner: str, repo: str, path: str = "") -> List[Dict[str, Any]]:
+    """
+    Recursively fetch all files from a GitHub repository
+    Returns list of files with their content and metadata
+    """
+    files = []
+    api_url = f"https://api.github.com/repos/{owner}/{repo}/contents/{path}"
+    
+    async with aiohttp.ClientSession() as session:
+        headers = {'Accept': 'application/vnd.github.v3+json'}
+        
+        async with session.get(api_url, headers=headers) as response:
+            if response.status != 200:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Failed to fetch repository: {await response.text()}"
+                )
+            
+            contents = await response.json()
+            
+            for item in contents:
+                if item['type'] == 'file':
+                    # Check if it's a code file
+                    file_ext = '.' + item['name'].split('.')[-1] if '.' in item['name'] else ''
+                    if file_ext.lower() in CODE_EXTENSIONS:
+                        # Fetch file content
+                        async with session.get(item['download_url']) as file_response:
+                            if file_response.status == 200:
+                                content = await file_response.text()
+                                
+                                # Determine language from extension
+                                language_map = {
+                                    '.py': 'python', '.js': 'javascript', '.jsx': 'javascript',
+                                    '.ts': 'typescript', '.tsx': 'typescript', '.java': 'java',
+                                    '.cpp': 'cpp', '.c': 'c', '.go': 'go', '.rb': 'ruby',
+                                    '.php': 'php', '.swift': 'swift', '.kt': 'kotlin',
+                                    '.rs': 'rust', '.scala': 'scala', '.sh': 'bash',
+                                    '.html': 'html', '.css': 'css', '.sql': 'sql'
+                                }
+                                
+                                files.append({
+                                    'path': item['path'],
+                                    'content': content,
+                                    'language': language_map.get(file_ext.lower(), 'unknown'),
+                                    'size': item['size']
+                                })
+                
+                elif item['type'] == 'dir':
+                    # Recursively fetch directory contents
+                    subfiles = await fetch_github_repo_contents(owner, repo, item['path'])
+                    files.extend(subfiles)
+    
+    return files
+
 async def analyze_code_with_gemini(code: str, language: str) -> List[Dict[str, Any]]:
     """
     Analyze code using Gemini 2.5 Pro for vulnerability detection

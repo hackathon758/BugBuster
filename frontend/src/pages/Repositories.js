@@ -9,8 +9,9 @@ import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { toast } from 'sonner';
-import { Code, Plus, Calendar, Shield, TrendingUp } from 'lucide-react';
+import { Code, Plus, Calendar, Shield, TrendingUp, AlertTriangle, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { Badge } from '../components/ui/badge';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../components/ui/accordion';
 
 export default function Repositories({ user }) {
   const [repositories, setRepositories] = useState([]);

@@ -49,8 +49,17 @@ export default function RepositoryScannerEnhanced({ user }) {
     };
     
     ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      handleWebSocketMessage(data);
+      // Ignore non-JSON messages like 'pong' keep-alive responses
+      if (event.data === 'pong' || event.data === 'ping') {
+        return;
+      }
+      
+      try {
+        const data = JSON.parse(event.data);
+        handleWebSocketMessage(data);
+      } catch (error) {
+        console.warn('Received non-JSON WebSocket message:', event.data);
+      }
     };
     
     ws.onerror = (error) => {

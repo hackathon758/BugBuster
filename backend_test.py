@@ -350,6 +350,7 @@ class BugBustersXTester:
         scan_result = self.test_github_scan_valid_repo()
         self.test_github_scan_invalid_url()
         self.test_github_scan_nonexistent_repo()
+        self.test_github_scan_no_code_files()
         
         # Data storage verification
         if scan_result:

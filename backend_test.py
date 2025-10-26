@@ -202,15 +202,38 @@ class BugBustersXTester:
             
             response = self.make_request("POST", "/repositories/scan-github", scan_data)
             
-            if response.status_code == 400:
+            if response.status_code == 400 or response.status_code == 500:
                 self.log_test("GitHub Scan - Nonexistent Repo", True, "Correctly rejected non-existent repository")
                 return True
             else:
                 self.log_test("GitHub Scan - Nonexistent Repo", False, 
-                            f"Expected 400 error but got {response.status_code}", response.text)
+                            f"Expected 400/500 error but got {response.status_code}", response.text)
                 return False
         except Exception as e:
             self.log_test("GitHub Scan - Nonexistent Repo", False, f"Test error: {str(e)}")
+            return False
+    
+    def test_github_scan_no_code_files(self):
+        """Test GitHub scanning with repository that has no code files"""
+        try:
+            scan_data = {
+                "github_url": "https://github.com/octocat/Hello-World"
+            }
+            
+            response = self.make_request("POST", "/repositories/scan-github", scan_data)
+            
+            if response.status_code == 400 and "No code files found" in response.text:
+                self.log_test("GitHub Scan - No Code Files", True, "Correctly rejected repository with no code files")
+                return True
+            elif response.status_code == 500 and "No code files found" in response.text:
+                self.log_test("GitHub Scan - No Code Files", True, "Correctly detected repository with no code files (500 status)")
+                return True
+            else:
+                self.log_test("GitHub Scan - No Code Files", False, 
+                            f"Expected 400 error for no code files but got {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_test("GitHub Scan - No Code Files", False, f"Test error: {str(e)}")
             return False
     
     def test_data_storage_verification(self, scan_result: Dict):

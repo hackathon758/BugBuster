@@ -73,6 +73,53 @@ export default function Repositories({ user }) {
     return 'text-red-600';
   };
 
+  const getSeverityIcon = (severity) => {
+    const icons = {
+      critical: <AlertTriangle className="w-4 h-4 text-red-600" />,
+      high: <AlertTriangle className="w-4 h-4 text-orange-600" />,
+      medium: <AlertTriangle className="w-4 h-4 text-yellow-600" />,
+      low: <Info className="w-4 h-4 text-blue-600" />,
+      info: <Info className="w-4 h-4 text-gray-600" />
+    };
+    return icons[severity] || icons.info;
+  };
+
+  const getSeverityColor = (severity) => {
+    const colors = {
+      critical: 'bg-red-100 text-red-800 border-red-200',
+      high: 'bg-orange-100 text-orange-800 border-orange-200',
+      medium: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      low: 'bg-blue-100 text-blue-800 border-blue-200',
+      info: 'bg-gray-100 text-gray-800 border-gray-200'
+    };
+    return colors[severity] || colors.info;
+  };
+
+  const toggleRepoVulnerabilities = async (repoId) => {
+    const isExpanded = expandedRepos[repoId];
+    
+    setExpandedRepos(prev => ({
+      ...prev,
+      [repoId]: !isExpanded
+    }));
+
+    // Fetch vulnerabilities if not already loaded and expanding
+    if (!isExpanded && !repoVulnerabilities[repoId]) {
+      setLoadingVulns(prev => ({ ...prev, [repoId]: true }));
+      try {
+        const response = await axios.get(`${API}/repositories/${repoId}/vulnerabilities`);
+        setRepoVulnerabilities(prev => ({
+          ...prev,
+          [repoId]: response.data
+        }));
+      } catch (error) {
+        toast.error('Failed to fetch vulnerabilities');
+      } finally {
+        setLoadingVulns(prev => ({ ...prev, [repoId]: false }));
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">

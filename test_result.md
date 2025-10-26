@@ -101,3 +101,111 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "User wants to paste a GitHub repository URL and have the entire codebase scanned immediately for security vulnerabilities"
+
+backend:
+  - task: "GitHub URL parsing function"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Created parse_github_url() function to extract owner/repo from GitHub URLs. Supports multiple URL formats including https and .git suffix"
+  
+  - task: "GitHub repository file fetching"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Created fetch_github_repo_contents() async function using aiohttp to recursively fetch all code files from GitHub API. Filters by 20+ supported code file extensions"
+  
+  - task: "GitHub repository scanning API endpoint"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Created POST /api/repositories/scan-github endpoint that: 1) Parses GitHub URL, 2) Fetches all code files, 3) Creates repository and scan records, 4) Analyzes each file with Gemini AI, 5) Stores vulnerabilities, 6) Returns comprehensive scan results"
+  
+  - task: "Repository model updated with github_url field"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added optional github_url field to Repository model to store the source GitHub URL"
+
+frontend:
+  - task: "GitHub URL scanning UI with tabs"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/RepositoryScanner.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added tab-based interface with two tabs: 'GitHub URL' (new) and 'Manual Upload' (existing). Added githubUrl state and scanningGithub loading state"
+  
+  - task: "GitHub URL input and validation"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/RepositoryScanner.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Created handleGithubScan() function with URL validation using regex pattern. Added input field with example and helper text"
+  
+  - task: "GitHub scan trigger and progress display"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/RepositoryScanner.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added scan button with loading state showing 'Scanning Repository...' during GitHub fetch and analysis. Shows success toast with repository name on completion"
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 0
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "GitHub repository scanning API endpoint"
+    - "GitHub URL parsing function"
+    - "GitHub file fetching functionality"
+    - "Frontend GitHub URL scanning UI"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "Implemented GitHub repository URL scanning feature. Users can now paste a GitHub URL and the system will: 1) Auto-fetch all code files from the repository using GitHub API, 2) Filter by 20+ supported code extensions (.py, .js, .ts, .java, etc.), 3) Auto-scan all files with Gemini AI, 4) Display comprehensive vulnerability report. Frontend has tab-based UI with 'GitHub URL' and 'Manual Upload' options. Ready for backend testing."

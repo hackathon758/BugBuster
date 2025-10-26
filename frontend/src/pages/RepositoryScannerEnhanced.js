@@ -374,13 +374,15 @@ export default function RepositoryScannerEnhanced({ user }) {
             </Card>
 
             {/* Vulnerability Types Checklist */}
-            <Card className="bg-white/80 backdrop-blur-sm border-gray-200 shadow-xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                  <Shield className="w-6 h-6 text-blue-600" />
+            <Card className="bg-white/90 backdrop-blur-sm border-gray-200 shadow-2xl">
+              <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-green-50 to-emerald-50">
+                <CardTitle className="flex items-center gap-3 text-xl" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <Shield className="w-6 h-6 text-green-600" />
+                  </div>
                   Security Checks Being Performed
                 </CardTitle>
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-sm text-gray-600 mt-2">
                   AI-powered analysis for common vulnerability patterns
                 </p>
               </CardHeader>

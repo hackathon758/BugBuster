@@ -17,6 +17,9 @@ export default function Repositories({ user }) {
   const [repositories, setRepositories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [expandedRepos, setExpandedRepos] = useState({});
+  const [repoVulnerabilities, setRepoVulnerabilities] = useState({});
+  const [loadingVulns, setLoadingVulns] = useState({});
   const [formData, setFormData] = useState({
     name: '',
     description: '',

@@ -459,8 +459,12 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Repository detail page with all vulnerabilities"
-    - "Clickable repository cards navigation"
+    - "Advanced Analysis Module - AST Parser"
+    - "Advanced Analysis Module - Taint Analysis"
+    - "Advanced Analysis Module - Cross-Language Security Detector"
+    - "Advanced GitHub Scanning API Endpoint"
+    - "Advanced GitHub Scanning with WebSocket"
+    - "Advanced Scanner UI with Dual Mode"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"

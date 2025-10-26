@@ -105,6 +105,42 @@
 user_problem_statement: "User wants to paste a GitHub repository URL and have the entire codebase scanned immediately for security vulnerabilities"
 
 backend:
+  - task: "WebSocket support for real-time scan progress"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added WebSocket endpoint (/ws/scan/{session_id}) and ConnectionManager for real-time communication. Created new endpoint POST /api/repositories/scan-github-ws that initiates background scanning task and sends real-time progress updates via WebSocket including: status messages, file-by-file progress, vulnerabilities found per file, completion status with full results."
+
+  - task: "AI-powered vulnerability fix generation"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Created generate_ai_fix() function using Gemini AI to analyze vulnerabilities and generate secure fixed code. Added POST /api/vulnerabilities/generate-fix endpoint that returns: fixed_code (secure version), explanation (what was changed and why), improvements (list of specific fixes made). Uses Gemini 2.0 Flash model with temperature 0.3 for consistent, secure fixes."
+
+  - task: "Download fixed code endpoint"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Created POST /api/vulnerabilities/download-fix endpoint that generates AI fix and returns it as a downloadable file with proper file extension based on language. Returns StreamingResponse with Content-Disposition header for file download."
+
   - task: "Repository-specific vulnerabilities endpoint"
     implemented: true
     working: true

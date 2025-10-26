@@ -104,6 +104,14 @@ function App() {
             }
           />
           <Route
+            path="/repositories/:repoId"
+            element={
+              <ProtectedRoute>
+                <RepositoryDetail user={user} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/vulnerabilities"
             element={
               <ProtectedRoute>

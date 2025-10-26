@@ -221,6 +221,89 @@ export default function RepositoryScanner({ user }) {
           </div>
         ) : (
           /* Scan Configuration */
+          <Tabs defaultValue="github" className="w-full">
+            <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
+              <TabsTrigger value="github">
+                <Github className="w-4 h-4 mr-2" />
+                GitHub URL
+              </TabsTrigger>
+              <TabsTrigger value="manual">
+                <Upload className="w-4 h-4 mr-2" />
+                Manual Upload
+              </TabsTrigger>
+            </TabsList>
+
+            {/* GitHub URL Scan Tab */}
+            <TabsContent value="github" className="space-y-6">
+              <div className="max-w-4xl mx-auto">
+                <Card className="bg-white/80 backdrop-blur-sm border-gray-200">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                      <Github className="w-6 h-6" />
+                      Scan GitHub Repository
+                    </CardTitle>
+                    <p className="text-sm text-gray-600 mt-2">
+                      Enter a public GitHub repository URL to automatically fetch and scan all code files
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div>
+                      <Label>GitHub Repository URL</Label>
+                      <Input
+                        value={githubUrl}
+                        onChange={(e) => setGithubUrl(e.target.value)}
+                        placeholder="https://github.com/owner/repository"
+                        className="mt-1.5"
+                        data-testid="github-url-input"
+                      />
+                      <p className="text-xs text-gray-500 mt-2">
+                        Example: https://github.com/facebook/react
+                      </p>
+                    </div>
+
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex items-start gap-3">
+                        <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
+                        <div className="space-y-2 text-sm text-gray-700">
+                          <p className="font-semibold text-blue-900">What happens next:</p>
+                          <ul className="space-y-1 ml-4">
+                            <li>✓ Fetches all code files from the repository</li>
+                            <li>✓ Analyzes each file with Gemini AI</li>
+                            <li>✓ Detects security vulnerabilities and bugs</li>
+                            <li>✓ Generates comprehensive security report</li>
+                          </ul>
+                          <p className="text-xs text-gray-600 mt-3">
+                            <strong>Note:</strong> Large repositories may take a few minutes to scan
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={handleGithubScan}
+                      disabled={scanningGithub || !githubUrl.trim()}
+                      className="w-full h-12 bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 text-white font-semibold"
+                      data-testid="scan-github-button"
+                    >
+                      {scanningGithub ? (
+                        <>
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          Scanning Repository...
+                        </>
+                      ) : (
+                        <>
+                          <Github className="w-5 h-5 mr-2" />
+                          Scan GitHub Repository
+                        </>
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            {/* Manual Upload Tab */}
+            <TabsContent value="manual">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
               {/* Repository Selection */}

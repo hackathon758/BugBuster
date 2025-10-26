@@ -237,39 +237,45 @@ export default function RepositoryScannerEnhanced({ user }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <Navigation user={user} />
       
       <div className="max-w-7xl mx-auto p-6 lg:p-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            AI-Powered Repository Scanner
+        <div className="mb-8 text-center">
+          <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm font-semibold mb-4">
+            <Shield className="w-4 h-4" />
+            Powered by Gemini AI
+          </div>
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-3" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            AI-Powered Security Scanner
           </h1>
-          <p className="text-gray-600">Scan GitHub repositories for security vulnerabilities with real-time AI analysis</p>
+          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+            Scan GitHub repositories for security vulnerabilities with real-time AI analysis and instant fixes
+          </p>
         </div>
 
         {!scanning && !scanResults ? (
           /* Scan Input */
-          <div className="max-w-4xl mx-auto">
-            <Card className="bg-white/80 backdrop-blur-sm border-gray-200 shadow-xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                  <Github className="w-6 h-6" />
+          <div className="max-w-4xl mx-auto space-y-6">
+            <Card className="bg-white/90 backdrop-blur-sm border-gray-200 shadow-2xl">
+              <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
+                <CardTitle className="flex items-center gap-2 text-xl" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  <Github className="w-6 h-6 text-blue-600" />
                   Scan GitHub Repository
                 </CardTitle>
                 <p className="text-sm text-gray-600 mt-2">
                   Enter a public GitHub repository URL to automatically fetch and scan all code files
                 </p>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-6 p-6">
                 <div>
-                  <Label>GitHub Repository URL</Label>
+                  <Label className="text-base font-semibold">GitHub Repository URL</Label>
                   <Input
                     value={githubUrl}
                     onChange={(e) => setGithubUrl(e.target.value)}
                     placeholder="https://github.com/owner/repository"
-                    className="mt-1.5"
+                    className="mt-2 h-12 text-base border-2 focus:border-blue-500"
                     onKeyPress={(e) => e.key === 'Enter' && handleGithubScan()}
                   />
                   <p className="text-xs text-gray-500 mt-2">
@@ -277,18 +283,30 @@ export default function RepositoryScannerEnhanced({ user }) {
                   </p>
                 </div>
 
-                <div className="bg-gradient-to-r from-blue-50 to-teal-50 border border-blue-200 rounded-lg p-4">
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-5">
                   <div className="flex items-start gap-3">
-                    <Zap className="w-5 h-5 text-blue-600 mt-0.5" />
-                    <div className="space-y-2 text-sm text-gray-700">
-                      <p className="font-semibold text-blue-900">Advanced Features:</p>
-                      <ul className="space-y-1 ml-4">
-                        <li>✓ Real-time scanning progress with file-by-file updates</li>
-                        <li>✓ Gemini AI-powered vulnerability detection</li>
-                        <li>✓ AI-generated fixes for detected vulnerabilities</li>
-                        <li>✓ Comprehensive security scoring</li>
-                        <li>✓ Download fixed code files</li>
-                      </ul>
+                    <Zap className="w-6 h-6 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div className="space-y-3 text-sm text-gray-700">
+                      <p className="font-bold text-blue-900 text-base">What We Scan For:</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {VULNERABILITY_TYPES.map((vulnType) => {
+                          const Icon = vulnType.icon;
+                          return (
+                            <div key={vulnType.id} className="flex items-center gap-2">
+                              <Icon className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                              <span className="font-medium">{vulnType.name}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="border-t border-blue-200 pt-3 mt-3">
+                        <p className="font-semibold text-blue-900 mb-1">Plus:</p>
+                        <ul className="space-y-1 ml-4">
+                          <li>✓ Real-time scanning progress with file-by-file updates</li>
+                          <li>✓ AI-generated fixes for detected vulnerabilities</li>
+                          <li>✓ Comprehensive security scoring & reporting</li>
+                        </ul>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -296,9 +314,9 @@ export default function RepositoryScannerEnhanced({ user }) {
                 <Button
                   onClick={handleGithubScan}
                   disabled={!githubUrl.trim()}
-                  className="w-full h-12 bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 text-white font-semibold"
+                  className="w-full h-14 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-300"
                 >
-                  <Github className="w-5 h-5 mr-2" />
+                  <Shield className="w-6 h-6 mr-2" />
                   Start Security Scan
                 </Button>
               </CardContent>

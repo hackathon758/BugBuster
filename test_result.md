@@ -249,7 +249,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Repository-specific vulnerabilities display"
+    - "Repository detail page with all vulnerabilities"
+    - "Clickable repository cards navigation"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -263,3 +264,5 @@ agent_communication:
     message: "Implemented repository-specific vulnerability display feature. Added new backend endpoint GET /api/repositories/{repo_id}/vulnerabilities that filters and returns only vulnerabilities for that specific repository. Updated frontend Repositories page to show expandable vulnerability sections on each repository card with: 1) Color-coded severity count badges, 2) Top 5 recent vulnerabilities with details, 3) On-demand loading when user expands section. Ready for testing."
   - agent: "testing"
     message: "✅ BACKEND TESTING COMPLETE: Repository-specific vulnerabilities endpoint implementation fully tested and working. All test scenarios passed: authentication, data structure validation, repository isolation, edge cases (invalid repo, no scans, no auth). The endpoint correctly returns vulnerabilities filtered by repository ID only, with proper severity counts and data integrity. Backend implementation is solid and ready for frontend integration testing."
+  - agent: "main"
+    message: "Implemented repository detail page navigation per user requirement. Now clicking on any repository card navigates to dedicated detail page (/repositories/:id) showing: 1) Repository header with name, description, language, security score, GitHub link, 2) Complete list of ALL vulnerabilities (not just top 5), 3) Severity filtering dropdown, 4) Color-coded severity badges with counts, 5) Full accordion-based vulnerability details with description, code snippet, CWE ID, OWASP category, remediation, file paths. Repository cards now clickable with visual hint. Ready for frontend testing."

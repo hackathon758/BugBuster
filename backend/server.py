@@ -121,6 +121,36 @@ class RepositoryScanRequest(BaseModel):
 class GitHubRepoScanRequest(BaseModel):
     github_url: str
 
+class VulnerabilityFixRequest(BaseModel):
+    vulnerability_id: str
+    code_snippet: str
+    language: str
+    file_path: str
+
+# ==================== WEBSOCKET CONNECTION MANAGER ====================
+
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: Dict[str, WebSocket] = {}
+
+    async def connect(self, websocket: WebSocket, client_id: str):
+        await websocket.accept()
+        self.active_connections[client_id] = websocket
+
+    def disconnect(self, client_id: str):
+        if client_id in self.active_connections:
+            del self.active_connections[client_id]
+
+    async def send_message(self, message: dict, client_id: str):
+        if client_id in self.active_connections:
+            try:
+                await self.active_connections[client_id].send_json(message)
+            except Exception as e:
+                logging.error(f"Error sending message to {client_id}: {e}")
+                self.disconnect(client_id)
+
+manager = ConnectionManager()
+
 # ==================== AUTH HELPERS ====================
 
 def create_jwt_token(user_id: str, email: str) -> str:

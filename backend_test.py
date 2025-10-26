@@ -525,6 +525,14 @@ class BugBustersXTester:
         if scan_result:
             self.test_data_storage_verification(scan_result)
         
+        # Repository vulnerabilities endpoint tests
+        print("\n🔍 Testing Repository Vulnerabilities Endpoint...")
+        if scan_result:
+            self.test_repository_vulnerabilities_endpoint(scan_result)
+        self.test_repository_vulnerabilities_invalid_repo()
+        self.test_repository_vulnerabilities_no_auth()
+        self.test_repository_vulnerabilities_no_scans()
+        
         # Summary
         print("\n" + "=" * 50)
         print("📊 TEST SUMMARY")

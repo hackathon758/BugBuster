@@ -92,6 +92,36 @@ export default function RepositoryScanner({ user }) {
     }
   };
 
+  const handleGithubScan = async () => {
+    if (!githubUrl.trim()) {
+      toast.error('Please enter a GitHub repository URL');
+      return;
+    }
+
+    // Validate GitHub URL format
+    const githubPattern = /github\.com\/[\w-]+\/[\w.-]+/;
+    if (!githubPattern.test(githubUrl)) {
+      toast.error('Please enter a valid GitHub URL (e.g., https://github.com/owner/repo)');
+      return;
+    }
+
+    setScanningGithub(true);
+    setResults(null);
+
+    try {
+      const response = await axios.post(`${API}/repositories/scan-github`, {
+        github_url: githubUrl
+      });
+      setResults(response.data);
+      toast.success(`Successfully scanned ${response.data.repository_name}!`);
+      fetchRepositories(); // Refresh repository list
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to scan GitHub repository');
+    } finally {
+      setScanningGithub(false);
+    }
+  };
+
   const getScoreColor = (score) => {
     if (score >= 80) return 'text-green-600';
     if (score >= 60) return 'text-yellow-600';

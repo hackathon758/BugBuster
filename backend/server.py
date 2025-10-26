@@ -69,6 +69,7 @@ class Repository(BaseModel):
     name: str
     description: Optional[str] = None
     language: str
+    github_url: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     last_scan: Optional[datetime] = None
     security_score: Optional[int] = None

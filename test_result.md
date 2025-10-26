@@ -178,6 +178,18 @@ backend:
         comment: "✅ TESTED: Repository model correctly stores github_url field. Verified through GET /api/repositories endpoint that GitHub URL is properly stored and retrievable."
 
 frontend:
+  - task: "Repository-specific vulnerabilities display"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Repositories.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added expandable vulnerabilities section to each repository card. Shows severity counts (critical, high, medium, low) with color-coded badges, displays top 5 recent vulnerabilities with titles, descriptions, and file paths. Uses ChevronUp/ChevronDown icons to expand/collapse. Fetches vulnerabilities on-demand when user expands section."
+
   - task: "GitHub URL scanning UI with tabs"
     implemented: true
     working: "NA"

@@ -234,7 +234,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Frontend GitHub URL scanning UI"
+    - "Repository-specific vulnerabilities endpoint"
+    - "Repository-specific vulnerabilities display"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -244,3 +245,5 @@ agent_communication:
     message: "Implemented GitHub repository URL scanning feature. Users can now paste a GitHub URL and the system will: 1) Auto-fetch all code files from the repository using GitHub API, 2) Filter by 20+ supported code extensions (.py, .js, .ts, .java, etc.), 3) Auto-scan all files with Gemini AI, 4) Display comprehensive vulnerability report. Frontend has tab-based UI with 'GitHub URL' and 'Manual Upload' options. Ready for backend testing."
   - agent: "testing"
     message: "✅ BACKEND TESTING COMPLETE: All GitHub repository scanning backend functionality is working perfectly. Comprehensive testing performed including: 1) Authentication (register/login) ✅, 2) GitHub URL parsing ✅, 3) Repository file fetching ✅, 4) Full scan workflow ✅, 5) Data storage verification ✅, 6) Error handling for invalid URLs/repos ✅. Successfully scanned test repository with 2 files analyzed, 3 vulnerabilities found, security score 95. All endpoints (repositories, scans, vulnerabilities) working correctly. Gemini AI integration functional. Ready for frontend testing or user acceptance."
+  - agent: "main"
+    message: "Implemented repository-specific vulnerability display feature. Added new backend endpoint GET /api/repositories/{repo_id}/vulnerabilities that filters and returns only vulnerabilities for that specific repository. Updated frontend Repositories page to show expandable vulnerability sections on each repository card with: 1) Color-coded severity count badges, 2) Top 5 recent vulnerabilities with details, 3) On-demand loading when user expands section. Ready for testing."

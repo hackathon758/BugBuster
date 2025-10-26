@@ -261,6 +261,9 @@ frontend:
       - working: "NA"
         agent: "main"
         comment: "Created enhanced repository scanner with WebSocket support for real-time progress updates. Features: 1) Real-time file-by-file scanning display showing which files are being analyzed, 2) Animated progress bar with percentage, 3) Live statistics counter (Total Files, Analyzed, Vulnerabilities Found), 4) Color-coded file status indicators (scanning/completed/skipped/error), 5) Smooth animations and transitions, 6) Auto-scrolling file list showing scan progress, 7) Status messages updating in real-time."
+      - working: "NA"
+        agent: "main"
+        comment: "🐛 FIXED JSON PARSING ERROR: Fixed critical bug in WebSocket message handler that was causing 'Unexpected token p, pong is not valid JSON' runtime error. Added logic to ignore keep-alive messages ('pong'/'ping') and wrapped JSON.parse in try-catch for robust error handling. Frontend will hot-reload automatically."
 
   - task: "Clickable repository cards navigation"
     implemented: true

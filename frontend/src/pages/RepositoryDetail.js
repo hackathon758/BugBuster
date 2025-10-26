@@ -332,6 +332,18 @@ export default function RepositoryDetail({ user }) {
             </CardContent>
           </Card>
         )}
+
+        {/* AI Fix Modal */}
+        {selectedVulnerability && (
+          <AIFixModal
+            vulnerability={selectedVulnerability}
+            isOpen={showAIFixModal}
+            onClose={() => {
+              setShowAIFixModal(false);
+              setSelectedVulnerability(null);
+            }}
+          />
+        )}
       </div>
     </div>
   );

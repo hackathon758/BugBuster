@@ -97,6 +97,14 @@ function App() {
             }
           />
           <Route
+            path="/advanced-scanner"
+            element={
+              <ProtectedRoute>
+                <AdvancedScanner user={user} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/repositories"
             element={
               <ProtectedRoute>

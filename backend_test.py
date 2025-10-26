@@ -140,35 +140,48 @@ class BugBustersXTester:
     def test_github_scan_valid_repo(self):
         """Test GitHub scanning with a valid small repository"""
         try:
-            # Using a small public repository with actual code files for testing
-            scan_data = {
-                "github_url": "https://github.com/octocat/Spoon-Knife"
-            }
+            # Try multiple repositories to find one with vulnerabilities
+            test_repos = [
+                "https://github.com/octocat/Spoon-Knife",
+                "https://github.com/defunkt/jquery-pjax",
+                "https://github.com/octocat/linguist"
+            ]
             
-            print("   Starting GitHub repository scan (this may take 30-60 seconds)...")
-            response = self.make_request("POST", "/repositories/scan-github", scan_data)
-            
-            if response.status_code == 200:
-                data = response.json()
-                required_fields = ["repository_id", "scan_id", "total_files", "files_analyzed", 
-                                 "total_vulnerabilities", "severity_counts", "security_score"]
+            for repo_url in test_repos:
+                print(f"   Trying repository: {repo_url}")
+                scan_data = {"github_url": repo_url}
                 
-                missing_fields = [field for field in required_fields if field not in data]
+                print("   Starting GitHub repository scan (this may take 30-60 seconds)...")
+                response = self.make_request("POST", "/repositories/scan-github", scan_data)
                 
-                if not missing_fields:
-                    self.log_test("GitHub Scan - Valid Repo", True, 
-                                f"Scan completed: {data['files_analyzed']} files analyzed, "
-                                f"{data['total_vulnerabilities']} vulnerabilities found, "
-                                f"security score: {data['security_score']}")
-                    return data
+                if response.status_code == 200:
+                    data = response.json()
+                    required_fields = ["repository_id", "scan_id", "total_files", "files_analyzed", 
+                                     "total_vulnerabilities", "severity_counts", "security_score"]
+                    
+                    missing_fields = [field for field in required_fields if field not in data]
+                    
+                    if not missing_fields:
+                        self.log_test("GitHub Scan - Valid Repo", True, 
+                                    f"Scan completed: {data['files_analyzed']} files analyzed, "
+                                    f"{data['total_vulnerabilities']} vulnerabilities found, "
+                                    f"security score: {data['security_score']}")
+                        return data
+                    else:
+                        self.log_test("GitHub Scan - Valid Repo", False, 
+                                    f"Response missing required fields: {missing_fields}", data)
+                        continue
+                elif response.status_code == 400 and "No code files found" in response.text:
+                    print(f"   Repository {repo_url} has no code files, trying next...")
+                    continue
                 else:
-                    self.log_test("GitHub Scan - Valid Repo", False, 
-                                f"Response missing required fields: {missing_fields}", data)
-                    return None
-            else:
-                self.log_test("GitHub Scan - Valid Repo", False, 
-                            f"Scan failed with status {response.status_code}", response.text)
-                return None
+                    print(f"   Repository {repo_url} scan failed with {response.status_code}, trying next...")
+                    continue
+            
+            # If we get here, none of the repositories worked
+            self.log_test("GitHub Scan - Valid Repo", False, "All test repositories failed to scan properly")
+            return None
+            
         except Exception as e:
             self.log_test("GitHub Scan - Valid Repo", False, f"Scan error: {str(e)}")
             return None

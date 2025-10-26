@@ -636,6 +636,7 @@ class BugBustersXTester:
         print("\n🔍 Testing Repository Vulnerabilities Endpoint...")
         if scan_result:
             self.test_repository_vulnerabilities_endpoint(scan_result)
+            self.test_repository_vulnerabilities_isolation(scan_result)
         self.test_repository_vulnerabilities_invalid_repo()
         self.test_repository_vulnerabilities_no_auth()
         self.test_repository_vulnerabilities_no_scans()

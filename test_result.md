@@ -105,6 +105,18 @@
 user_problem_statement: "User wants to paste a GitHub repository URL and have the entire codebase scanned immediately for security vulnerabilities"
 
 backend:
+  - task: "Repository-specific vulnerabilities endpoint"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Created GET /api/repositories/{repo_id}/vulnerabilities endpoint that fetches all vulnerabilities for a specific repository. Returns vulnerability counts by severity, total count, and list of all vulnerabilities for that repository only."
+
   - task: "GitHub URL parsing function"
     implemented: true
     working: true

@@ -1295,22 +1295,29 @@ if __name__ == "__main__":
         self.test_repository_vulnerabilities_no_auth()
         self.test_repository_vulnerabilities_no_scans()
         
-        # NEW FEATURES TESTING
-        print("\n🚀 Testing New WebSocket and AI Features...")
+        # PRIORITY FEATURES TESTING (as per review request)
+        print("\n🚀 Testing PRIORITY Features: AI Fix Generation, Download, WebSocket...")
         
-        # WebSocket scan endpoint test
-        ws_scan_result = self.test_websocket_scan_endpoint()
-        
-        # AI fix generation tests
+        # 1. AI-POWERED VULNERABILITY FIX GENERATION (CRITICAL - just fixed bug)
+        print("\n🔧 PRIORITY 1: AI-Powered Vulnerability Fix Generation (CRITICAL)")
         fix_data = None
         if scan_result:
             fix_data = self.test_ai_fix_generation(scan_result)
         self.test_ai_fix_invalid_vulnerability()
+        self.test_ai_fix_generation_comprehensive()
         
-        # Download fixed code tests
+        # 2. DOWNLOAD FIXED CODE ENDPOINT
+        print("\n📥 PRIORITY 2: Download Fixed Code Endpoint")
         if fix_data:
             self.test_download_fixed_code(fix_data)
         self.test_download_fixed_code_invalid_vulnerability()
+        self.test_download_fixed_code_different_languages()
+        
+        # 3. WEBSOCKET REAL-TIME SCAN PROGRESS
+        print("\n🔄 PRIORITY 3: WebSocket Real-time Scan Progress")
+        ws_scan_result = self.test_websocket_scan_endpoint()
+        if ws_scan_result:
+            self.test_websocket_connection(ws_scan_result["session_id"])
         
         # Authentication tests for AI features
         self.test_ai_features_no_auth()

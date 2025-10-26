@@ -11,7 +11,7 @@ import sys
 from typing import Dict, Any, Optional
 
 # Configuration
-BASE_URL = "https://secrepo-monitor.preview.emergentagent.com/api"
+BASE_URL = "https://vulshield-anim.preview.emergentagent.com/api"
 TEST_USER_EMAIL = "testuser@bugbustersx.com"
 TEST_USER_NAME = "Test User"
 TEST_USER_PASSWORD = "SecurePassword123!"

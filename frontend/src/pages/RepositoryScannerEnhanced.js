@@ -186,6 +186,18 @@ export default function RepositoryScannerEnhanced({ user }) {
     setVulnerabilitiesFound(0);
     setStatusMessage('Initializing scan...');
     setScanResults(null);
+    setCheckedVulnerabilities([]);
+    
+    // Simulate checking vulnerability types progressively
+    const checkInterval = setInterval(() => {
+      setCheckedVulnerabilities(prev => {
+        if (prev.length < VULNERABILITY_TYPES.length) {
+          return [...prev, VULNERABILITY_TYPES[prev.length].id];
+        }
+        clearInterval(checkInterval);
+        return prev;
+      });
+    }, 800);
 
     try {
       const response = await axios.post(`${API}/repositories/scan-github-ws`, {
@@ -197,6 +209,7 @@ export default function RepositoryScannerEnhanced({ user }) {
       
     } catch (error) {
       setScanning(false);
+      clearInterval(checkInterval);
       toast.error(error.response?.data?.detail || 'Failed to start scan');
     }
   };

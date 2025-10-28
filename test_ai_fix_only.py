@@ -7,7 +7,7 @@ import requests
 import json
 import sys
 
-BASE_URL = "https://advanced-detection.preview.emergentagent.com/api"
+BASE_URL = "https://bug-fixer-35.preview.emergentagent.com/api"
 TEST_USER_EMAIL = "testuser@bugbustersx.com"
 TEST_USER_PASSWORD = "SecurePassword123!"
 

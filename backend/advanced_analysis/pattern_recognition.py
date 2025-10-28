@@ -62,7 +62,7 @@ class PatternRecognizer:
             ],
             'command_injection': [
                 {
-                    'pattern': r'os\.system\s*\([^)]*input|request|argv',
+                    'pattern': r'os\.system\s*\([^)]*(input|request|argv)',
                     'description': 'System command execution with user input',
                     'severity': 'critical',
                     'cwe': 'CWE-78',

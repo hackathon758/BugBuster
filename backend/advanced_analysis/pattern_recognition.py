@@ -122,7 +122,7 @@ class PatternRecognizer:
                     'languages': ['python', 'java', 'go']
                 },
                 {
-                    'pattern': r'readFile\s*\([^)]*request|params|query',
+                    'pattern': r'readFile\s*\([^)]*(request|params|query)',
                     'description': 'File read with user input',
                     'severity': 'high',
                     'cwe': 'CWE-22',

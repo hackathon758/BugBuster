@@ -39,14 +39,14 @@ class PatternRecognizer:
             ],
             'xss': [
                 {
-                    'pattern': r'innerHTML\s*=\s*[^;]+request|params|query',
+                    'pattern': r'innerHTML\s*=\s*[^;]*(request|params|query)',
                     'description': 'innerHTML assignment with user input',
                     'severity': 'high',
                     'cwe': 'CWE-79',
                     'languages': ['javascript', 'typescript']
                 },
                 {
-                    'pattern': r'document\.write\s*\([^)]*request|params',
+                    'pattern': r'document\.write\s*\([^)]*(request|params)',
                     'description': 'document.write with user input',
                     'severity': 'high',
                     'cwe': 'CWE-79',

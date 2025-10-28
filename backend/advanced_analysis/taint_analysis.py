@@ -148,7 +148,7 @@ class TaintAnalyzer:
                         self.vulnerabilities.append({
                             'type': 'CROSS_LANGUAGE_BOUNDARY',
                             'severity': 'high',
-                            'title': f'Cross-Language Call to Dangerous Function',
+                            'title': 'Cross-Language Call to Dangerous Function',
                             'description': f'Code in {lang1} calls dangerous function {call_name} in {lang2}',
                             'from_language': lang1,
                             'to_language': lang2,
